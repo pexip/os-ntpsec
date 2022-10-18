@@ -1,0 +1,564 @@
+ntpsec (1.2.1+dfsg1-8) unstable; urgency=medium
+
+  * Fix ntpdate-debian error on ntp.conf (Closes: 1020865)
+  * ntpdig: Only show socket error messages in debug (Closes: 971523)
+  * ntpdig: Continue on errors in non-concurrent mode
+  * ntpdate: Disable JSON (Closes: 1020865)
+
+ -- Richard Laager <rlaager@debian.org>  Tue, 18 Oct 2022 01:15:33 -0500
+
+ntpsec (1.2.1+dfsg1-7) unstable; urgency=medium
+
+  * watch: Use FTP
+  * watch: Fix syntax to help lintian
+  * ntplogtemp: Fix printing blank line on exit
+
+ -- Richard Laager <rlaager@debian.org>  Tue, 10 May 2022 21:30:41 -0500
+
+ntpsec (1.2.1+dfsg1-6) unstable; urgency=low
+
+  * Add a NEWS.Debian bit with transitional details for those coming from
+    the ntp package.  Unfortunately, apt-listchanges will not show this
+    to those upgrading from ntp due to source vs binary version number
+    differences relating to the transition.
+
+ -- Richard Laager <rlaager@debian.org>  Sun, 03 Apr 2022 15:45:01 -0500
+
+ntpsec (1.2.1+dfsg1-5) experimental; urgency=medium
+
+  * Add ntpd.service alias
+  * Add ntp transitional packages (Closes: 1003966)
+
+ -- Richard Laager <rlaager@debian.org>  Tue, 08 Mar 2022 00:37:42 -0600
+
+ntpsec (1.2.1+dfsg1-4) unstable; urgency=high
+
+  [ Debian Janitor ]
+  * Remove constraints unnecessary since buster
+
+  [ Richard Laager ]
+  * Remove direct libssl1.1 Depends (Closes: 1006627)
+
+ -- Richard Laager <rlaager@debian.org>  Mon, 28 Feb 2022 18:13:12 -0600
+
+ntpsec (1.2.1+dfsg1-3) unstable; urgency=high
+
+  * Mention NTS in the package description (Closes: 1004010)
+  * Backport some changes:
+    - Some startup logging fixes
+    - Some seccomp fixes for newer glibc / other architectures
+    - OpenSSL 3.0 support (Closes: 1005716)
+
+ -- Richard Laager <rlaager@debian.org>  Tue, 15 Feb 2022 20:12:55 -0600
+
+ntpsec (1.2.1+dfsg1-2) unstable; urgency=medium
+
+  * Fix ntpq man page formatting (Closes: 998072)
+
+ -- Richard Laager <rlaager@debian.org>  Fri, 29 Oct 2021 18:54:28 -0500
+
+ntpsec (1.2.1+dfsg1-1) unstable; urgency=medium
+
+  * Fix ntpdate -d.
+    Thanks to Bernhard <rep.dot.nop@gmail.com> (Closes: 994819)
+  * New upstream version:
+    - Update the SHM gpsd documentation
+    - ntpdig: continue instead of exit on IPv6 when there is none. solves #680
+    - ntpq: solve #689 - 'ntpq -c raw -c readvar' crashes ...
+    - ntpq: solve #690 - ntpq does not print associd when 0 ...
+    - ntpdig: Fix steplimit option.
+    - Improve ntpdate script.
+    - ntpdig: Try to handle gaierror better ...
+    - Fix parsing of commandline parameter 'P'
+    - ntp.util: Shorten ntpq/ntpmon peers common output generation.
+    - ntpq, ntpmon: Add dextral peers mode ...
+    - ntpq: -c rv should return associd only when variable(s) not passed.
+    - Don't generate # into ASCIIfied keys.
+  * Stop using removed --build-epoch
+  * Update Standards-Version to 4.6.0 (no changes)
+
+ -- Richard Laager <rlaager@debian.org>  Sat, 25 Sep 2021 18:43:40 -0500
+
+ntpsec (1.2.0+dfsg1-4) unstable; urgency=medium
+
+  * ntpkeygen: Stop using # character: CVE-2021-22212 (Closes: 989847)
+
+ -- Richard Laager <rlaager@debian.org>  Thu, 17 Jun 2021 00:15:04 -0500
+
+ntpsec (1.2.0+dfsg1-3) unstable; urgency=medium
+
+  * apparmor: allow openssl.cnf (Closes: 980508)
+
+ -- Richard Laager <rlaager@debian.org>  Wed, 20 Jan 2021 20:36:38 -0600
+
+ntpsec (1.2.0+dfsg1-2) unstable; urgency=medium
+
+  * Disable libssl version check (Closes: 977794)
+
+ -- Richard Laager <rlaager@debian.org>  Mon, 21 Dec 2020 02:11:26 -0600
+
+ntpsec (1.2.0+dfsg1-1) unstable; urgency=medium
+
+  * New upstream version
+    - NTS is official as RFC 8915.
+    - NTS-KE client now defaults to port 4460.
+    - NTS-KE server now listens on port 4460.
+    - Add flakiness option to ntpq and fixed limit=1 in mrulist.
+    - Fixed a minor formatting issue in rate page.
+    - Fix for ntpq crashing with debug=2
+    - Revert "Exit if config file fails to open", i.e. parse ntp.d/* even
+      if ntp.conf does not exist.
+    - Ignore a failure to restore the RLIMIT_CORE resource limit.
+
+ -- Richard Laager <rlaager@debian.org>  Tue, 17 Nov 2020 02:14:57 -0600
+
+ntpsec (1.1.9+dfsg1-4) unstable; urgency=medium
+
+  * Depend on libbsd-dev
+
+ -- Richard Laager <rlaager@debian.org>  Mon, 07 Sep 2020 13:34:19 -0500
+
+ntpsec (1.1.9+dfsg1-3) unstable; urgency=medium
+
+  * Prefer gnuplot-nox for ntpsec-ntpviz
+
+ -- Richard Laager <rlaager@debian.org>  Thu, 03 Sep 2020 18:01:30 -0500
+
+ntpsec (1.1.9+dfsg1-2) unstable; urgency=medium
+
+  * Fix bogus port number in NTS-KE connecting message
+
+ -- Richard Laager <rlaager@debian.org>  Sat, 15 Aug 2020 17:53:35 -0500
+
+ntpsec (1.1.9+dfsg1-1) unstable; urgency=medium
+
+  * New upstream version
+    - Add AES and other algorithm support to ntpq and ntpdig, from OpenSSL.
+    - The default restrictions now start with noquery and limited to reduce
+      the opportunities for being used for DDoS-ing.
+    - NTS (per the draft RFC) now requires TLS 1.3.
+      - The config keyword tlsciphers has been removed.
+    - Additional filtering and sort options have been added to ntpq/mrulist.
+    - With "restrict limited", traffic is now limited to an average of 1
+      packet per second with bursts of 20.
+    - SIGHUP and hourly checks have been unified.  Both now:
+        - check for a new log file
+        - check for a new certificate file
+        - check for a new leap file
+      SIGHUP also restarts all pending DNS and NTS probes.
+    - Defer loading certificate until after drop-root.  This checks that file
+      permissions are setup correctly so ntpd will be able to reload the
+      certificate.
+    - Fix ntpleapfetch to work with latest leap file.
+    - This fixes building with GCC 10. (Closes: 957616)
+  * Drop ntpsec-ntpviz Suggests python
+  * Fix the certbot hook quoting
+  * Switch to rlaager@debian.org
+  * Switch to asciidoctor
+  * Raise OpenSSL dependency
+  * Start transition to port 4460
+    - ntpd in server mode now listens on both ports 123 and 4460.
+    - ntpd in client mode now defaults to port 4460.
+  * Upgrade to debhelper-compat 13
+
+ -- Richard Laager <rlaager@debian.org>  Thu, 13 Aug 2020 02:11:44 -0500
+
+ntpsec (1.1.8+dfsg1-6) unstable; urgency=high
+
+  * Handle unset variable in certbot script
+  * Update Standards-Version to 4.5.0 (no changes)
+
+ -- Richard Laager <rlaager@wiktel.com>  Sat, 25 Apr 2020 22:17:18 -0500
+
+ntpsec (1.1.8+dfsg1-5) unstable; urgency=high
+
+  * Update debian/ntpsec-doc.doc-base
+  * Remove copyright years
+    https://blog.ntpsec.org/2020/02/15/copyright-year.html
+  * Rename ntp-wait.service to ntpsec-wait.service
+    This fixes a regression that occurred in 1.1.7+dfsg1-1.
+  * Improve integration with systemd-cron
+  * Update NTS label
+    This is a backwards-incompatible change!
+  * Update README.Debian notes about TLS 1.3
+  * Rework certbot integration
+  * Change from /usr/lib/ntp to /usr/libexec/ntpsec
+  * Drop as-needed linker flag
+
+ -- Richard Laager <rlaager@wiktel.com>  Sat, 25 Apr 2020 14:06:47 -0500
+
+ntpsec (1.1.8+dfsg1-4) unstable; urgency=medium
+
+  * Switch to python3-gps
+  * Fix asciidoc version check (and FTBFS)
+
+ -- Richard Laager <rlaager@wiktel.com>  Sun, 29 Dec 2019 00:22:24 -0600
+
+ntpsec (1.1.8+dfsg1-3) unstable; urgency=medium
+
+  * Backport fixes to NTS logging
+  * Backport a fix for clock fuzz errors
+
+ -- Richard Laager <rlaager@wiktel.com>  Thu, 05 Dec 2019 21:53:36 -0600
+
+ntpsec (1.1.8+dfsg1-2) unstable; urgency=medium
+
+  * Changes as of ntp_4.2.8p12+dfsg-3 have been merged as appropriate:
+    - rotate-stats: Limit to specific filename patterns.
+      Thanks to Bernhard Schmidt <berni@debian.org>
+      with changes for NTPsec by: Richard Laager <rlaager@wiktel.com>
+    - AppArmor: fix path to Samba NTP signing socket.
+      Thanks to Bernhard Schmidt <berni@debian.org>
+  * Patch out a docs reference to /var/db
+  * Update quick.adoc to use /var/log/ntpsec
+  * Add default cert & key files to apparmor policy
+  * Update the Ubuntu example in quick.adoc
+  * Fix some mentions of the "ntp" user
+  * Use /var/lib/ntpsec for driftfile
+  * Move ntp.keys to /etc/ntpsec (Closes: 945754)
+  * Use /etc/ntpsec in the code and docs
+  * Cleanup the ntpleapfetch documentation
+  * Workaround ntpconf failed expansion
+  * Add an ntp.keys HOWTO to README.Debian
+  * Do not install panda.adoc
+  * Remove the ancient SMP notes from README.Debian
+  * Remove the ancient hwclock notes from README.Debian
+  * Reorder README.Debian
+  * Require python3-ntp version to match
+
+ -- Richard Laager <rlaager@wiktel.com>  Thu, 05 Dec 2019 00:04:11 -0600
+
+ntpsec (1.1.8+dfsg1-1) unstable; urgency=medium
+
+  * New upstream version
+    - Fix/tweak several NTS logging messages
+    - Make ntpq -c :config work
+    - Fix potential buffer overrun in nts_client.c ALPN checking
+    - Fix broken variable substitutions in documentation
+    - Add OpenSSL version logging
+    - Use the -4/-6 flag for both NTS-KE lookup and NTP lookup
+    - Repair ugly crash from NTS client if broken ca filename
+    - Fix logging hostname/null bug in dns_probe
+  * Drop two patches (merged upstream)
+  * Refresh Debian-specific patches
+  * Add upstream metadata (DEP-12 / UMEGAYA)
+  * Remove lintian ...install-key overrides
+  * Remove debian/compat
+  * Update git branch structure to follow DEP-14
+  * Document the use of "unapplied" patch format
+  * Remove __pycache__ directories when repacking
+  * Update repack-waf for uscan version 4
+  * Rework debian/README.source
+  * Make debian/repack-waf shellcheck-clean
+  * Remove an old bug note not applicable on Debian
+
+ -- Richard Laager <rlaager@wiktel.com>  Sun, 17 Nov 2019 23:30:18 -0600
+
+ntpsec (1.1.7+dfsg1-2) unstable; urgency=medium
+
+  * Set maxclock in the default config
+  * Split nts config across lines
+  * Fix ntpmon/ntptrace version string expansion (Closes: 944084)
+  * Move packaging git to Salsa
+  * Backport NTS-KE hostname fix
+  * Remove old lintian overrides
+  * Add an NTS section to README.Debian
+  * Add README.source
+  * Rename default branch from sid to unstable
+
+ -- Richard Laager <rlaager@wiktel.com>  Mon, 04 Nov 2019 20:14:44 -0600
+
+ntpsec (1.1.7+dfsg1-1) unstable; urgency=medium
+
+  * New upstream version (Closes: 931327)
+    - NTS is now implemented.
+      https://tools.ietf.org/html/draft-ietf-ntp-using-nts-for-ntp
+      We thank Cisco for sponsoring the NTS development.
+    - Lots of fixes and cleanups to PPS, both implementation and
+      documentation.
+      - Allow "prefer" on a "pps" peer to use it with any source.
+    - NIST lockclock mode is now a runtime option set by the (previously
+      unused) flag1 mode bit of the local-clock driver.
+    - The numeric literal argument of the 'time1' fudge option on a clock
+      can now have one or more letter suffixes that compensate for era
+      rollover in a GPS device.  Each "g" adds the number of seconds in a
+      1024-week (10-bit) GPS era. Each "G" adds the number of seconds in a
+      8192-week (13-bit) GPS era.
+    - The neoclock4x driver has been removed, due to the hardware and the
+      vendor having utterly vanished from the face of the earth.
+    - Update libjsmn with upstream sync
+    - ntpviz: Add -T TERMINAL option.
+    - Fix slow DNS retries (Closes: 924192)
+  * Return to new upstream GPG key
+  * Drop many patches (merged upstream)
+  * Refresh Debian-specific patches
+  * ntpdate.8: Remove duplicated -o option
+  * ntpdate.8: Remove -p option (Closes: 926877)
+  * ntpdate.8: Remove -e option
+  * ntpdate.8: Remove inaccurate BUGS section
+  * Update ntpdate-debian.8 to match ntpdate.8
+  * Fix ntpdate -s (syslog) to fix the if-up hook (Closes: 931414)
+  * Fix cron jobs for systemd-cron (Closes: 929756)
+  * Sort debian/ntpsec.install
+  * Give the CloudFlare server as an example with NTS
+  * Add a hint to ntp.conf for NTS servers
+  * Add nts-keys file to AppArmor profile
+  * Add ssl_certs and ssl_keys to apparmor for NTS
+  * Update Standards-Version to 4.4.1 (no changes)
+  * Use python2 instead of python for ntploggps
+  * Fix a spelling error in ntp.conf.5
+  * Update to debhelper 12
+  * Fix/suppress dh_missing warnings
+
+ -- Richard Laager <rlaager@wiktel.com>  Sun, 29 Sep 2019 22:27:38 -0500
+
+ntpsec (1.1.3+dfsg1-2) unstable; urgency=medium
+
+  * Suppress lintian warning
+  * Backport a KOD rate-limiting fix
+  * Backport control key error handling in ntpq
+  * Backport PPS doc updates and "prefer" support
+  * Backport pool documentation updates
+  * Backport "Add security fixes to NEWS"
+  * Backport neoclock crash fix
+  * Backport ntpkeygen/ntploggps versioning fix
+  * Backport strncpy/strncat => strlcpy/strlcat fixes
+  * Backport various documentation fixes
+  * Bump Standards-Version to 4.3.0 (no changes)
+  * Backport Python egg .info file
+  * Fix broken version substitution in ntpleapfetch
+  * Use SOURCE_DATE_EPOCH from pkg-info.mk
+  * Make debian/upstream/signing-key.asc minimal
+  * Explain why the tarball is repacked
+  * Remove an unused lintian override
+  * Remove unused code from debian/rules
+  * Suppress lintian manpage warning
+  * Fix a spelling error
+  * Suppress lintian warnings for systemd [Install]
+  * Add Documentation= to ntp-wait.service
+  * Add Documentation= to ntpsec-systemd-netif.*
+  * Remove GPL/OpenSSL lintian override
+
+ -- Richard Laager <rlaager@wiktel.com>  Mon, 04 Feb 2019 01:38:48 -0600
+
+ntpsec (1.1.3+dfsg1-1) unstable; urgency=high
+
+  * New upstream version (Closes: 919513)
+    - Lots of typo fixes, documentation cleanups, test targets.
+    - CVE-2019-6442: "An authenticated attacker can write one byte out of
+      bounds in ntpd via a malformed config request, related to
+      config_remotely in ntp_config.c, yyparse in ntp_parser.tab.c, and
+      yyerror in ntp_parser.y."
+    - CVE-2019-6443: "Because of a bug in ctl_getitem, there is a stack-based
+      buffer over-read in read_sysvars in ntp_control.c in ntpd.
+    - CVE-2019-6444: "process_control() in ntp_control.c has a stack-based
+      buffer over-read because attacker-controlled data is dereferenced by
+      ntohl() in ntpd."
+    - CVE-2019-6445: "An authenticated attacker can cause a NULL pointer
+      dereference and ntpd crash in ntp_control.c, related to ctl_getitem."
+  * Drop debian/patches/fix-ntploggps.patch (merged upstream)
+  * Refresh patches
+  * Revert "Use python3-gps"
+    At this time, python3-gps is only available in experimental.
+  * Disable the waf PYTHON_GPS check
+  * Update debian/copyright
+  * Fix ntpdate.8 documentation of -B
+  * Changes as of ntp_4.2.8p12+dfsg-3 have been merged as appropriate:
+    - Update ntpdate.8 from ntpdate.html
+      Thanks to Bernhard Schmidt <berni@debian.org>
+    - Update ntpdate.README.Debian
+      Thanks to Bernhard Schmidt <berni@debian.org>
+    - As a notable exception, while the ntp package has removed the ntpdate
+      hooks, I have not (yet?) done so in ntpsec.
+  * Set Rules-Requires-Root: no
+  * Sort debian/ntpsec.maintscript
+
+ -- Richard Laager <rlaager@wiktel.com>  Thu, 17 Jan 2019 04:17:46 -0600
+
+ntpsec (1.1.2+dfsg1-6) unstable; urgency=medium
+
+  * Use python3-gps
+
+ -- Richard Laager <rlaager@wiktel.com>  Tue, 18 Dec 2018 13:30:35 -0600
+
+ntpsec (1.1.2+dfsg1-5) unstable; urgency=medium
+
+  [ Bjarni Ingi Gislason ]
+  * ntpdate.8: Some minor corrections to the manual (Closes: 915937)
+
+  [ Richard Laager ]
+  * Update ntpdate.8
+
+ -- Richard Laager <rlaager@wiktel.com>  Fri, 07 Dec 2018 23:11:13 -0600
+
+ntpsec (1.1.2+dfsg1-4) unstable; urgency=medium
+
+  * Strip tos lines when using DHCP servers (Closes: 913964)
+
+ -- Richard Laager <rlaager@wiktel.com>  Sun, 18 Nov 2018 04:11:00 -0600
+
+ntpsec (1.1.2+dfsg1-3) unstable; urgency=medium
+
+  * Cleanup /var/lib/ntpsec on purge (Closes: 909923)
+
+ -- Richard Laager <rlaager@wiktel.com>  Sun, 30 Sep 2018 03:59:25 -0500
+
+ntpsec (1.1.2+dfsg1-2) unstable; urgency=medium
+
+  * Drop dependency on python3-all-dev (Closes: 909731)
+
+ -- Richard Laager <rlaager@wiktel.com>  Thu, 27 Sep 2018 06:42:19 -0500
+
+ntpsec (1.1.2+dfsg1-1) unstable; urgency=medium
+
+  * Revert to old upstream GPG key
+  * New upstream version
+    - Use data minimization on client requests
+      https://datatracker.ietf.org/doc/draft-ietf-ntp-data-minimization/
+    - Support AES-128-CMAC for authentication
+      https://datatracker.ietf.org/doc/draft-ietf-ntp-mac/
+  * Refresh patches
+  * Drop get-orig-source rules target
+  * Add --enable-warnings
+  * Raise Standards-Version to 4.2.1
+  * Fix ntpviz to use /var/log/ntpsec
+
+ -- Richard Laager <rlaager@wiktel.com>  Sun, 02 Sep 2018 00:37:48 -0500
+
+ntpsec (1.1.1+dfsg1-2) unstable; urgency=medium
+
+  * Fix syntax error in ntpsec-ntpdate DHCP hook (Closes: 905678)
+
+ -- Richard Laager <rlaager@wiktel.com>  Tue, 07 Aug 2018 09:11:08 -0500
+
+ntpsec (1.1.1+dfsg1-1) unstable; urgency=medium
+
+  * Changes as of ntp_4.2.8p11+dfsg-1 have been merged as appropriate:
+    - Drop old versioned build-deps.
+      Thanks to Bernhard Schmidt <berni@debian.org>
+    - Sync AppArmor profile changes from Ubuntu.
+      Thanks to Bernhard Schmidt <berni@debian.org>
+  * Update apparmor for new drift temp file
+  * Drop preempt from Ubuntu ntp.conf
+  * Use ntp.conf.dhcp if it exists, rather than only if it is newer than
+    ntp.conf
+  * Add an option to ignore DHCP-provided servers (Closes: 898402)
+  * Update upstream GPG key
+  * New upstream version
+    - Log timestamps now include the year.  This is useful when
+      investigating bugs involving time-setting and -g.
+    - Many internal cleanups to clear the way for upcoming major features.
+      They should generally not be user visible.  Refer to the git-log if
+      you are interested.
+    - Restore support for peer (MODE_ACTIVE) packets
+  * Drop autorevision-related code
+  * Refresh Debian patches
+  * README.Debian: Update bit about dhclient.conf
+  * README.Debian: Fix broken link to NTP servers
+  * debian/copyright: Use HTTPS for Format URL
+  * Update URLs in debian/ to HTTPS
+  * debian/copyright: Merge in full CC0 text
+  * Rename ntp service to ntpsec
+  * Rename ntp-wait.service to ntpsec-wait.service
+  * Rename ntp-rotate-stats.service to ntpsec-rotate-stats.service
+  * Rename ntp-rotate-stats.timer to ntpsec-rotate-stats.timer
+  * Refactor DHCP hooks.
+    Thanks to Dimitri John Ledkov <xnox@ubuntu.com> for the networkd example.
+  * Rename the ntpsec DHCP hooks
+  * Rename the files used by the DHCP hooks
+  * Rename the ntpdate hooks
+  * Add NetworkManager support for ntpdate DHCP hook
+  * Remove ntpdate logcheck rule
+  * Rename /etc/ntp.conf to /etc/ntpsec/ntp.conf
+  * Rename /etc/ntp.d to /etc/ntpsec/ntp.d
+  * Rename /var/lib/ntp to /var/lib/ntpsec
+  * Rename /var/log/ntpstats to /var/log/ntpsec (Closes: 893542)
+  * Add net_admin to the apparmor profile
+
+ -- Richard Laager <rlaager@wiktel.com>  Thu, 02 Aug 2018 22:04:20 -0500
+
+ntpsec (1.1.0+dfsg1-1) unstable; urgency=medium
+
+  * Make ntpsec Conflict with ntpdate
+    - Use ntpsec-ntpdate instead of ntpdate.
+  * Stop deleting /var/lib/ntpdate/ (Closes: 892966)
+    Thanks to Bernhard Schmidt <berni@debian.org> for the suggestion.
+  * New upstream version
+    - Digests longer then 20 bytes will be truncated.
+    - We have dropped support for Broadcast servers.
+    - A bug that caused the rejection of 33% of packets from Amazon time
+      service has been fixed.
+  * Drop patches merged upstream
+    - fix-ntpdig.patch
+    - systemd-remove-extra-dependencies.patch
+    - fix-name-of-psutil.patch
+    - fix-spectracom-log-prefixes.patch
+    - fix-ntpviz-file-encodings.patch
+    - systemd-remove-remainafterexit.patch
+    - systemd-use-high-priority.patch
+    - systemd-ionice-ntpviz.patch
+    - systemd-cleanup-ntp-wait-service.patch
+    - fix-ntploggps.patch
+    - systemd-use-usr-sbin.patch
+    - systemd-do-not-restart.patch
+    - systemd-allow-running-in-containers.patch
+    - Merge-Classic-fix-for-CVE-2018-7182.patch
+  * Update copyright
+
+ -- Richard Laager <rlaager@wiktel.com>  Fri, 16 Mar 2018 00:42:24 -0500
+
+ntpsec (1.0.0+dfsg1-5) unstable; urgency=high
+
+  * Fix CVE-2018-7182
+
+ -- Richard Laager <rlaager@wiktel.com>  Wed, 07 Mar 2018 19:47:34 -0600
+
+ntpsec (1.0.0+dfsg1-4) unstable; urgency=medium
+
+  * Remove empty /var/log/ntpstats on ntpviz removal
+  * Fix installing ntpsec-ntpviz without ntpsec (Closes: 891278)
+  * systemd: Allow running in containers (Closes: 890771)
+
+ -- Richard Laager <rlaager@wiktel.com>  Sun, 04 Mar 2018 15:06:58 -0600
+
+ntpsec (1.0.0+dfsg1-3) unstable; urgency=medium
+
+  * Add Vcs-* headers
+  * Update Standards-Version to 4.1.3
+  * Improve debian/copyright (Closes: 890758)
+  * Bump the autorevision version requirement (Closes: 890761)
+  * Fix FTBFS when building arch-indep only.
+    Thanks to Daniel Baumann <daniel.baumann@progress-linux.org>
+    (Closes: 890762)
+  * Make ntpsec-ntpdate depend on python3-ntp (Closes: 890770)
+  * Inline the SHM message in README.Debian
+  * Add note about AppArmor tunable in README.Debian.
+    Thanks to Bernhard Schmidt <berni@debian.org>
+  * Drop historic Breaks/Pre-Depends.
+    Thanks to Bernhard Schmidt <berni@debian.org>
+  * ntpsec: Stop creating /var/log/ntpstats
+  * ntpsec-ntpviz: Add Suggests: python
+  * Create /var/lib/ntp in the postinst
+  * Do not recursively chown /var/log/ntpstats
+  * Suppress a lintian warning
+  * Drop historic apparmor Suggests/Breaks/Replaces
+  * Changes as of ntp_4.2.8p10+dfsg-6 have been merged as appropriate.
+
+ -- Richard Laager <rlaager@wiktel.com>  Wed, 21 Feb 2018 00:29:24 -0600
+
+ntpsec (1.0.0+dfsg1-2) unstable; urgency=medium
+
+  * debian/apparmor-profile: add attach_disconnected.
+    Thanks to Christian Ehrhardt <christian.ehrhardt@canonical.com>
+  * Fix reading the drift file on startup
+  * Drop the ntpwait "quick mode" patch
+
+ -- Richard Laager <rlaager@wiktel.com>  Wed, 13 Dec 2017 17:18:10 -0600
+
+ntpsec (1.0.0+dfsg1-1) unstable; urgency=medium
+
+  * Initial release. (Closes: #819806)
+    The packaging was originally forked from ntp_4.2.8p8+dfsg.
+    Changes as of ntp_4.2.8p10+dfsg-5 have been merged.
+
+ -- Richard Laager <rlaager@wiktel.com>  Thu, 30 Nov 2017 21:29:52 -0600
