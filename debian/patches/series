@@ -34,3 +34,5 @@ set-statsdir-by-default.patch
 use-private-dir-for-libntpc.patch
 disable-libssl-version-check.patch
 ntpdate-disable-json.patch
+
+openssl3-support.patch
