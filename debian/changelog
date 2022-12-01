@@ -1,6 +1,7 @@
-ntpsec (1.2.1+dfsg1-8pexip1) pexip; urgency=medium
+ntpsec (1.2.1+dfsg1-8pexip1) pexip-bullseye-openssl3; urgency=medium
 
   * Prepare Pexip packaging
+  * Remove use of deprecated OpenSSL APIs
 
  -- John-Mark Bell <jmb@pexip.com>  Mon, 14 Nov 2022 16:18:33 +0000
 
