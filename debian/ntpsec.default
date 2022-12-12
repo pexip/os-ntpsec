@@ -1,7 +1,7 @@
 NTPD_OPTS="-g -N"
 
 # Set to "yes" to ignore DHCP servers returned by DHCP.
-IGNORE_DHCP=""
+IGNORE_DHCP="yes"
 
 # If you use certbot to obtain a certificate for ntpd, provide its name here.
 # The ntpsec deploy hook for certbot will handle copying and permissioning the
