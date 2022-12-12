@@ -1,3 +1,9 @@
+ntpsec (1.2.1+dfsg1-8pexip2) pexip-bullseye-openssl3; urgency=medium
+
+  * No-change rebuild
+
+ -- John-Mark Bell <jmb@pexip.com>  Mon, 12 Dec 2022 16:57:34 +0000
+
 ntpsec (1.2.1+dfsg1-8pexip1) pexip-bullseye-openssl3; urgency=medium
 
   * Prepare Pexip packaging
