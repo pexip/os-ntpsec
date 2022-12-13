@@ -448,10 +448,18 @@ index 792e98f..6b45948 100644
  	/* CMAC_MAX_MAC_LENGTH isn't in API
  	 * Check here to avoid buffer overrun in cmac_decrypt and cmac_encrypt
 diff --git a/libntp/macencrypt.c b/libntp/macencrypt.c
-index fe1a145..1d07932 100644
+index fe1a145..b1f48ff 100644
 --- a/libntp/macencrypt.c
 +++ b/libntp/macencrypt.c
-@@ -26,7 +26,9 @@
+@@ -10,6 +10,7 @@
+ #include <stdbool.h>
+ #include <stdint.h>
+ 
++#include <openssl/crypto.h>
+ #include <openssl/evp.h>	/* provides OpenSSL digest API */
+ #include <openssl/md5.h>
+ 
+@@ -26,7 +27,9 @@
  
  /* Need one per thread. */
  extern EVP_MD_CTX *digest_ctx;
@@ -461,7 +469,7 @@ index fe1a145..1d07932 100644
  
  /* ctmemeq - test two blocks memory for equality without leaking
   * timing information.
-@@ -64,6 +66,7 @@ cmac_encrypt(
+@@ -64,6 +67,7 @@ cmac_encrypt(
  {
  	uint8_t	mac[CMAC_MAX_MAC_LENGTH];
  	size_t	len;
@@ -469,7 +477,7 @@ index fe1a145..1d07932 100644
  	CMAC_CTX *ctx = cmac_ctx;
  
  	if (!CMAC_Init(ctx, auth->key, auth->key_size, auth->cipher, NULL)) {
-@@ -75,6 +78,17 @@ cmac_encrypt(
+@@ -75,6 +79,17 @@ cmac_encrypt(
  	}
  	CMAC_Update(ctx, (uint8_t *)pkt, (unsigned int)length);
  	CMAC_Final(ctx, mac, &len);
@@ -487,7 +495,7 @@ index fe1a145..1d07932 100644
  	if (MAX_BARE_MAC_LENGTH < len)
  		len = MAX_BARE_MAC_LENGTH;
  	memmove((uint8_t *)pkt + length + 4, mac, len);
-@@ -97,6 +111,7 @@ cmac_decrypt(
+@@ -97,6 +112,7 @@ cmac_decrypt(
  {
  	uint8_t	mac[CMAC_MAX_MAC_LENGTH];
  	size_t	len;
@@ -495,7 +503,7 @@ index fe1a145..1d07932 100644
  	CMAC_CTX *ctx = cmac_ctx;
  
  	if (!CMAC_Init(ctx, auth->key, auth->key_size, auth->cipher, NULL)) {
-@@ -108,6 +123,17 @@ cmac_decrypt(
+@@ -108,6 +124,17 @@ cmac_decrypt(
  	}
  	CMAC_Update(ctx, (uint8_t *)pkt, (unsigned int)length);
  	CMAC_Final(ctx, mac, &len);
@@ -513,6 +521,46 @@ index fe1a145..1d07932 100644
  	if (MAX_BARE_MAC_LENGTH < len)
  		len = MAX_BARE_MAC_LENGTH;
  	if ((unsigned int)size != len + 4) {
+@@ -218,6 +245,10 @@ addr2refid(sockaddr_u *addr)
+ {
+ 	uint8_t		digest[MD5_DIGEST_LENGTH];
+ 	uint32_t	addr_refid;
++#if OPENSSL_VERSION_NUMBER >= 0x20000000L
++	OSSL_LIB_CTX	*libctx;
++	EVP_MD		*md;
++#endif
+ 	EVP_MD_CTX	*ctx;
+ 	unsigned int	len;
+ 
+@@ -225,11 +256,17 @@ addr2refid(sockaddr_u *addr)
+ 		return (NSRCADR(addr));
+ 
+ 	ctx = EVP_MD_CTX_create();
++#if OPENSSL_VERSION_NUMBER < 0x20000000L
+ #ifdef EVP_MD_CTX_FLAG_NON_FIPS_ALLOW
+ 	/* MD5 is not used as a crypto hash here. */
+ 	EVP_MD_CTX_set_flags(ctx, EVP_MD_CTX_FLAG_NON_FIPS_ALLOW);
+ #endif
+ 	if (!EVP_DigestInit_ex(ctx, EVP_md5(), NULL)) {
++#else
++	libctx = OSSL_LIB_CTX_new();
++	md = EVP_MD_fetch(libctx, "MD5", NULL);
++	if (!EVP_DigestInit_ex(ctx, md, NULL)) {
++#endif
+ 		msyslog(LOG_ERR, "MAC: MD5 init failed");
+ 		exit(1);
+ 	}
+@@ -238,6 +275,10 @@ addr2refid(sockaddr_u *addr)
+ 	    sizeof(struct in6_addr));
+ 	EVP_DigestFinal_ex(ctx, digest, &len);
+ 	EVP_MD_CTX_destroy(ctx);
++#if OPENSSL_VERSION_NUMBER >= 0x20000000L
++	EVP_MD_free(md);
++	OSSL_LIB_CTX_free(libctx);
++#endif
+ 	memcpy(&addr_refid, digest, sizeof(addr_refid));
+ 	return (addr_refid);
+ }
 diff --git a/libntp/pymodule-mac.c b/libntp/pymodule-mac.c
 index 940c3cb..8a30ec4 100644
 --- a/libntp/pymodule-mac.c
@@ -583,6 +631,59 @@ index 1a4faf5..05ab84d 100644
  	cmac_ctx = CMAC_CTX_new();
 +#endif
  	ssl_init_done = true;
+ }
+ 
+diff --git a/ntpd/ntp_control.c b/ntpd/ntp_control.c
+index 9442a67..ccc300b 100644
+--- a/ntpd/ntp_control.c
++++ b/ntpd/ntp_control.c
+@@ -12,6 +12,7 @@
+ #include <arpa/inet.h>
+ #include <inttypes.h>
+ 
++#include <openssl/crypto.h>
+ #include <openssl/evp.h>	/* provides OpenSSL digest API */
+ 
+ #include "ntpd.h"
+@@ -2853,6 +2854,10 @@ static uint32_t derive_nonce(
+ 		uint8_t	digest[EVP_MAX_MD_SIZE];
+ 		uint32_t extract;
+ 	}		d;
++#if OPENSSL_VERSION_NUMBER >= 0x20000000L
++	OSSL_LIB_CTX	*libctx;
++	EVP_MD		*md;
++#endif
+ 	EVP_MD_CTX	*ctx;
+ 	unsigned int	len;
+ 
+@@ -2861,8 +2866,17 @@ static uint32_t derive_nonce(
+ 		last_salt_update = current_time;
+ 	}
+ 
++#if OPENSSL_VERSION_NUMBER > 0x20000000L
++	libctx = OSSL_LIB_CTX_new();
++	md = EVP_MD_fetch(libctx, "MD5", NULL);
++#endif
++
+ 	ctx = EVP_MD_CTX_create();
++#if OPENSSL_VERSION_NUMBER < 0x20000000L
+ 	EVP_DigestInit_ex(ctx, EVP_md5(), NULL);
++#else
++	EVP_DigestInit_ex(ctx, md, NULL);
++#endif
+ 	EVP_DigestUpdate(ctx, salt, sizeof(salt));
+ 	EVP_DigestUpdate(ctx, &ts_i, sizeof(ts_i));
+ 	EVP_DigestUpdate(ctx, &ts_f, sizeof(ts_f));
+@@ -2877,6 +2891,11 @@ static uint32_t derive_nonce(
+ 	EVP_DigestFinal_ex(ctx, d.digest, &len);
+ 	EVP_MD_CTX_destroy(ctx);
+ 
++#if OPENSSL_VERSION_NUMBER >= 0x20000000L
++	EVP_MD_free(md);
++	OSSL_LIB_CTX_free(libctx);
++#endif
++
+ 	return d.extract;
  }
  
 diff --git a/ntpd/nts.c b/ntpd/nts.c
