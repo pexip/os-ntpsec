@@ -1,3 +1,9 @@
+ntpsec (1.2.1+dfsg1-8pexip4) pexip-bullseye-openssl3; urgency=medium
+
+  * Use dedicated libctx for MD5
+
+ -- John-Mark Bell <jmb@pexip.com>  Tue, 13 Dec 2022 18:13:40 +0000
+
 ntpsec (1.2.1+dfsg1-8pexip3) pexip-bullseye-openssl3; urgency=medium
 
   * Use Pexip server CNAMEs
