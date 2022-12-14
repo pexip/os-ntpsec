@@ -166,10 +166,6 @@ override_dh_install:
 
 	install -D -m 0755 debian/ntpdate-debian \
 		debian/ntpsec-ntpdate/usr/sbin/ntpdate-debian
-	install -D -m 0644 debian/ntpsec-systemd-netif.path \
-		debian/ntpsec/lib/systemd/system/ntpsec-systemd-netif.path
-	install -D -m 0644 debian/ntpsec-systemd-netif.service \
-		debian/ntpsec/lib/systemd/system/ntpsec-systemd-netif.service
 
 ifeq (yes,$(shell dpkg-vendor --derives-from Ubuntu && echo yes))
 	install -D -m 0644 debian/ntp.conf.ubuntu debian/ntpsec/etc/ntpsec/ntp.conf
@@ -207,7 +203,6 @@ endif
 override_dh_installsystemd:
 	dh_installsystemd -pntpsec \
 		ntpsec.service \
-		ntpsec-systemd-netif.path \
 		ntpsec-rotate-stats.timer
 	dh_installsystemd -pntpsec-ntpviz \
 		ntploggps.timer \
