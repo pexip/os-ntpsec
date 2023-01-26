@@ -1,3 +1,9 @@
+ntpsec (1.2.1+dfsg1-8pexip6) pexip; urgency=medium
+
+  * Merge openssl3 changes to bullseye
+
+ -- Steve McIntyre <steve.mcintyre@pexip.com>  Thu, 26 Jan 2023 11:07:12 +0000
+
 ntpsec (1.2.1+dfsg1-8pexip5) pexip-bullseye-openssl3; urgency=medium
 
   * Disable ntpsec-systemd-netif integration
