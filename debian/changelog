@@ -1,3 +1,9 @@
+ntpsec (1.2.2+dfsg1-1pexip2) pexip; urgency=medium
+
+  * Refresh OpenSSL 3 patch
+
+ -- Huw Jones <huw@pexip.com>  Thu, 16 Mar 2023 14:44:21 +0000
+
 ntpsec (1.2.2+dfsg1-1pexip1) pexip; urgency=medium
 
   * New upstream release
