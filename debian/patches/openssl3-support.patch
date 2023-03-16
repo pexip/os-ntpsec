@@ -142,18 +142,32 @@ index 419694a..f338a01 100644
  #if OPENSSL_VERSION_NUMBER >= 0x10100000L && OPENSSL_VERSION_NUMBER <= 0x10100060L
  	/* Workaround for an OpenSSL bug that causes a double free
  	   if you call CMAC_CTX_cleanup() before CMAC_CTX_free().
-@@ -236,6 +244,10 @@ void AES_SIV_CTX_cleanup(AES_SIV_CTX *ctx) {
+@@ -236,6 +244,24 @@ void AES_SIV_CTX_cleanup(AES_SIV_CTX *ctx) {
  #else
          CMAC_CTX_cleanup(ctx->cmac_ctx_init);
          CMAC_CTX_cleanup(ctx->cmac_ctx);
 +#endif
 +#else
-+	EVP_MAC_CTX_free(ctx->mac_ctx_init);
-+	EVP_MAC_CTX_free(ctx->mac_ctx);
++        if (ctx->mac_ctx_init != NULL) {
++                EVP_MAC *mac;
++                mac = EVP_MAC_CTX_get0_mac(ctx->mac_ctx_init);
++                EVP_MAC_up_ref(mac);
++                EVP_MAC_CTX_free(ctx->mac_ctx_init);
++                ctx->mac_ctx_init = EVP_MAC_CTX_new(mac);
++                EVP_MAC_free(mac);
++        }
++        if (ctx->mac_ctx != NULL) {
++                EVP_MAC *mac;
++                mac = EVP_MAC_CTX_get0_mac(ctx->mac_ctx);
++                EVP_MAC_up_ref(mac);
++                EVP_MAC_CTX_free(ctx->mac_ctx);
++                ctx->mac_ctx = EVP_MAC_CTX_new(mac);
++                EVP_MAC_free(mac);
++        }
  #endif
          OPENSSL_cleanse(&ctx->d, sizeof ctx->d);
  }
-@@ -243,6 +255,7 @@ void AES_SIV_CTX_cleanup(AES_SIV_CTX *ctx) {
+@@ -243,6 +269,7 @@ void AES_SIV_CTX_cleanup(AES_SIV_CTX *ctx) {
  void AES_SIV_CTX_free(AES_SIV_CTX *ctx) {
          if (ctx) {
                  EVP_CIPHER_CTX_free(ctx->cipher_ctx);
@@ -161,7 +175,7 @@ index 419694a..f338a01 100644
                  /* Prior to OpenSSL 1.0.2b, CMAC_CTX_free() crashes on NULL */
                  if (LIKELY(ctx->cmac_ctx_init != NULL)) {
                          CMAC_CTX_free(ctx->cmac_ctx_init);
-@@ -250,24 +263,47 @@ void AES_SIV_CTX_free(AES_SIV_CTX *ctx) {
+@@ -250,24 +277,48 @@ void AES_SIV_CTX_free(AES_SIV_CTX *ctx) {
                  if (LIKELY(ctx->cmac_ctx != NULL)) {
                          CMAC_CTX_free(ctx->cmac_ctx);
                  }
@@ -195,6 +209,7 @@ index 419694a..f338a01 100644
 +                ctx->mac_ctx_init = EVP_MAC_CTX_new(mac);
 +                ctx->mac_ctx = EVP_MAC_CTX_new(mac);
 +        }
++        EVP_MAC_free(mac);
 +#endif
  
          if (UNLIKELY(ctx->cipher_ctx == NULL ||
@@ -210,7 +225,7 @@ index 419694a..f338a01 100644
                  AES_SIV_CTX_free(ctx);
                  return NULL;
          }
-@@ -281,10 +317,17 @@ int AES_SIV_CTX_copy(AES_SIV_CTX *dst, AES_SIV_CTX const *src) {
+@@ -281,10 +332,17 @@ int AES_SIV_CTX_copy(AES_SIV_CTX *dst, AES_SIV_CTX const *src) {
                      != 1)) {
                  return 0;
          }
@@ -228,7 +243,7 @@ index 419694a..f338a01 100644
          /* Not necessary to copy cmac_ctx since it's just temporary
           * storage */
          return 1;
-@@ -295,15 +338,26 @@ int AES_SIV_Init(AES_SIV_CTX *ctx, unsigned char const *key, size_t key_len) {
+@@ -295,15 +353,26 @@ int AES_SIV_Init(AES_SIV_CTX *ctx, unsigned char const *key, size_t key_len) {
                                               0, 0, 0, 0, 0, 0, 0, 0};
          size_t out_len;
          int ret = 0;
@@ -255,7 +270,7 @@ index 419694a..f338a01 100644
                  if (UNLIKELY(EVP_EncryptInit_ex(ctx->cipher_ctx,
                                                  EVP_aes_128_ctr(),
                                                  NULL, key + 16, NULL) != 1)) {
-@@ -311,10 +365,18 @@ int AES_SIV_Init(AES_SIV_CTX *ctx, unsigned char const *key, size_t key_len) {
+@@ -311,10 +380,18 @@ int AES_SIV_Init(AES_SIV_CTX *ctx, unsigned char const *key, size_t key_len) {
                  }
                  break;
          case 48:
@@ -274,7 +289,7 @@ index 419694a..f338a01 100644
                  if (UNLIKELY(EVP_EncryptInit_ex(ctx->cipher_ctx,
                                                  EVP_aes_192_ctr(),
                                                  NULL, key + 24, NULL) != 1)) {
-@@ -322,10 +384,18 @@ int AES_SIV_Init(AES_SIV_CTX *ctx, unsigned char const *key, size_t key_len) {
+@@ -322,10 +399,18 @@ int AES_SIV_Init(AES_SIV_CTX *ctx, unsigned char const *key, size_t key_len) {
                  }
                  break;
          case 64:
@@ -293,7 +308,7 @@ index 419694a..f338a01 100644
                  if (UNLIKELY(EVP_EncryptInit_ex(ctx->cipher_ctx,
                                                  EVP_aes_256_ctr(),
                                                  NULL, key + 32, NULL) != 1)) {
-@@ -336,6 +406,7 @@ int AES_SIV_Init(AES_SIV_CTX *ctx, unsigned char const *key, size_t key_len) {
+@@ -336,6 +421,7 @@ int AES_SIV_Init(AES_SIV_CTX *ctx, unsigned char const *key, size_t key_len) {
                  goto done;
          }
  
@@ -301,7 +316,7 @@ index 419694a..f338a01 100644
          if (UNLIKELY(CMAC_CTX_copy(ctx->cmac_ctx, ctx->cmac_ctx_init) != 1)) {
                  goto done;
          }
-@@ -346,6 +417,18 @@ int AES_SIV_Init(AES_SIV_CTX *ctx, unsigned char const *key, size_t key_len) {
+@@ -346,6 +432,18 @@ int AES_SIV_Init(AES_SIV_CTX *ctx, unsigned char const *key, size_t key_len) {
          if (UNLIKELY(CMAC_Final(ctx->cmac_ctx, ctx->d.byte, &out_len) != 1)) {
                  goto done;
          }
@@ -320,7 +335,7 @@ index 419694a..f338a01 100644
          debug("CMAC(zero)", ctx->d.byte, out_len);
          ret = 1;
  
-@@ -365,6 +448,7 @@ int AES_SIV_AssociateData(AES_SIV_CTX *ctx, unsigned char const *data,
+@@ -365,6 +463,7 @@ int AES_SIV_AssociateData(AES_SIV_CTX *ctx, unsigned char const *data,
          dbl(&ctx->d);
          debug("double()", ctx->d.byte, 16);
  
@@ -328,7 +343,7 @@ index 419694a..f338a01 100644
          if (UNLIKELY(CMAC_CTX_copy(ctx->cmac_ctx, ctx->cmac_ctx_init) != 1)) {
                  goto done;
          }
-@@ -374,6 +458,18 @@ int AES_SIV_AssociateData(AES_SIV_CTX *ctx, unsigned char const *data,
+@@ -374,6 +473,18 @@ int AES_SIV_AssociateData(AES_SIV_CTX *ctx, unsigned char const *data,
          if (UNLIKELY(CMAC_Final(ctx->cmac_ctx, cmac_out.byte, &out_len) != 1)) {
                  goto done;
          }
@@ -347,7 +362,7 @@ index 419694a..f338a01 100644
          assert(out_len == 16);
          debug("CMAC(ad)", cmac_out.byte, 16);
  
-@@ -391,21 +487,40 @@ static inline int do_s2v_p(AES_SIV_CTX *ctx, block *out,
+@@ -391,21 +502,40 @@ static inline int do_s2v_p(AES_SIV_CTX *ctx, block *out,
          block t;
          size_t out_len = sizeof out->byte;
  
@@ -388,7 +403,7 @@ index 419694a..f338a01 100644
          } else {
                  size_t i;
                  memcpy(&t, in, len);
-@@ -417,13 +532,25 @@ static inline int do_s2v_p(AES_SIV_CTX *ctx, block *out,
+@@ -417,13 +547,25 @@ static inline int do_s2v_p(AES_SIV_CTX *ctx, block *out,
                  dbl(&ctx->d);
                  xorblock(&t, &ctx->d);
                  debug("xor", t.byte, 16);

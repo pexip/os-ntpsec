@@ -1,3 +1,9 @@
+ntpsec (1.2.2+dfsg1-1pexip3) pexip; urgency=medium
+
+  * Fix double free when calling AES_SIV_CTX_cleanup, then AES_SIV_CTX_free
+
+ -- Huw Jones <huw@pexip.com>  Thu, 16 Mar 2023 16:10:22 +0000
+
 ntpsec (1.2.2+dfsg1-1pexip2) pexip; urgency=medium
 
   * Refresh OpenSSL 3 patch
