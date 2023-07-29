@@ -1,3 +1,10 @@
+ntpsec (1.2.2+dfsg1-1+deb12u1) bookworm-security; urgency=high
+
+  * Fix cookie crash.
+    Thanks to Hal Murray (Closes: 1038422)
+
+ -- Richard Laager <rlaager@debian.org>  Sat, 29 Jul 2023 15:52:36 -0500
+
 ntpsec (1.2.2+dfsg1-1) unstable; urgency=medium
 
   * New upstream version

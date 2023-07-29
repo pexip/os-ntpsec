@@ -3,6 +3,7 @@
 
 # Forwarded
 0001-Write-pidfile-in-parent.patch
+fix-cookie-crash.patch
 
 # Forwarding not needed
 systemd-rename-service.patch
