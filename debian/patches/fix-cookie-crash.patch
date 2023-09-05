@@ -1,0 +1,20 @@
+Description: Fix cookie crash
+ This is a minimal fix for an NTS cookie crash.
+Bug: https://gitlab.com/NTPsec/ntpsec/-/issues/794
+Bug-Debian: https://bugs.debian.org/1038422
+Origin: upstream, https://gitlab.com/NTPsec/ntpsec/-/issues/794#note_1483608766
+Author: Hal Murray <halmurray@sonic.net>
+Last-Update: 2023-07-29
+
+--- a/ntpd/nts_cookie.c
++++ b/ntpd/nts_cookie.c
+@@ -382,6 +382,9 @@
+ 	if (NULL == cookie_ctx)
+ 		return false;	/* We aren't initialized yet. */
+ 
++	if (0 == nts_nKeys)
++		return false;	/* No cookies.	We are not an NTS server. */
++
+ 	/* We may get garbage from the net */
+ 	if (cookielen > NTS_MAX_COOKIELEN)
+ 		return false;

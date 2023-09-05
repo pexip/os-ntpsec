@@ -1,3 +1,16 @@
+ntpsec (1.2.2+dfsg1-1+deb12u1pexip1) pexip; urgency=high
+
+  * New upstream release
+
+ -- John-Mark Bell <jmb@pexip.com>  Tue, 05 Sep 2023 17:32:24 +0100
+
+ntpsec (1.2.2+dfsg1-1+deb12u1) bookworm-security; urgency=high
+
+  * Fix cookie crash.
+    Thanks to Hal Murray (Closes: 1038422)
+
+ -- Richard Laager <rlaager@debian.org>  Sat, 29 Jul 2023 15:52:36 -0500
+
 ntpsec (1.2.2+dfsg1-1pexip3) pexip; urgency=medium
 
   * Fix double free when calling AES_SIV_CTX_cleanup, then AES_SIV_CTX_free
