@@ -182,6 +182,7 @@ lex_getch(
 			conf_file_sum += (unsigned int)ch;
 	} else if (stream->fpi) {
 		/* fetch next 7-bit ASCII char (or EOF) from file */
+		/* coverity[tainted_scalar] */
 		while ((ch = fgetc(stream->fpi)) != EOF && ch > SCHAR_MAX) {
 			stream->curpos.ncol++;
 		}
@@ -328,7 +329,7 @@ lex_init_stack(
  * anything until the next 'lex_init_stack()' succeeded.
  */
 void
-lex_drop_stack()
+lex_drop_stack(void)
 {
 	lex_stack = _drop_stack_do(lex_stack);
 }
@@ -342,7 +343,7 @@ lex_drop_stack()
  * in the force-eof mode before this call.
  */
 bool
-lex_flush_stack() {
+lex_flush_stack(void) {
 	bool retv = false;
 
 	if (NULL != lex_stack) {
@@ -521,7 +522,7 @@ lex_from_file(void)
 }
 
 struct FILE_INFO *
-lex_current()
+lex_current(void)
 {
 	/* this became so simple, it could be a macro. But then,
 	 * lex_stack needed to be global...

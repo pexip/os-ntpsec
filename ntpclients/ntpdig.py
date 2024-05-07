@@ -101,7 +101,14 @@ def queryhost(server, concurrent, timeout=5, port=123):
             firstloop = False
         if debug:
             log("querying %s (%s)" % (sockaddr[0], server))
-        s = socket.socket(family, socktype)
+        try:
+            s = socket.socket(family, socktype)
+        except OSError:
+            if debug:
+                log("Skipping because socket for %s of family"
+                    " %d, type %d could not be formed." %
+                    (sockaddr[0], family, socktype))
+            continue
         if keyid and keytype and passwd:
             if debug:
                 log("authenticating with %s key %d" % (keytype, keyid))
@@ -210,18 +217,18 @@ def report(packet, json):
     digits = min(6, -int(math.log10(2**packet.precision)))
 
     date = time.strftime("%Y-%m-%d", t)
-    tod = time.strftime("%T", t) + (".%-*d" % (digits, ms)).rstrip()
+    tod = time.strftime("%T", t) + (".%0*d" % (digits, ms)).rstrip()
     sgn = ("%+d" % tmoffset)[0]
     tz = "%s%02d%02d" % (sgn, abs(tmoffset) // 60, tmoffset % 60)
 
     if json:
         say('{"time":"%sT%s%s","offset":%f,"precision":%f,"host":"%s",'
-            '"ip":"%s","stratum":%s,"leap":"%s","adjusted":%s}\n'
+            '"ip":"%s","stratum":%s,"leap":"%s","adjusted":%s,"delay":%f}\n'
             % (date, tod, tz,
                packet.adjust(), packet.synchd(),
                packet.hostname, packet.resolved or packet.hostname,
                packet.stratum, packet.leap(),
-               "true" if adjusted else "false"))
+               "true" if adjusted else "false", packet.delta()))
     else:
         say("%s %s (%s) %+f +/- %f %s"
             % (date, tod, tz,
@@ -263,10 +270,7 @@ USAGE:  ntpdig [-<flag> [<val>] | --<name>[{=| }<val>]]...
 
 if __name__ == '__main__':
     bin_ver = "ntpsec-@NTPSEC_VERSION_EXTENDED@"
-    if ntp.util.stdversion() != bin_ver:
-        sys.stderr.write("Module/Binary version mismatch\n")
-        sys.stderr.write("Binary: %s\n" % bin_ver)
-        sys.stderr.write("Module: %s\n" % ntp.util.stdversion())
+    ntp.util.stdversioncheck(bin_ver)
     try:
         try:
             (options, arguments) = getopt.getopt(

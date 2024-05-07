@@ -1,9 +1,97 @@
-ntpsec (1.2.2+dfsg1-1+deb12u1) bookworm-security; urgency=high
+ntpsec (1.2.3+dfsg1-3) unstable; urgency=low
 
+  [ Joachim Kross ]
+  * Drop "nopeer" option of restrict command from configuration
+
+ -- Richard Laager <rlaager@debian.org>  Mon, 06 May 2024 22:11:50 -0500
+
+ntpsec (1.2.3+dfsg1-2) unstable; urgency=medium
+
+  [ Joachim Kross ]
+  * Add usestats log file to NTPsec apparmor profile
+  * Add nts-keys-tmp to NTPsec apparmor profile
+
+  [ Richard Laager ]
+  * Update Standards-Version (no changes)
+
+ -- Richard Laager <rlaager@debian.org>  Tue, 30 Apr 2024 00:21:46 -0500
+
+ntpsec (1.2.3+dfsg1-1) unstable; urgency=low
+
+  [ Richard Laager ]
+  * New upstream version
+    - Change mode6 alignment to four, which may break some compatibility with
+      classic NTP.
+    - Make ntpq stop dropping output timestamp leading zeroes.
+    - Reset some stats hourly, even when not logged into files.
+    - Add error logging, and stats for ms-sntp.
+    - We think we have fixed ms-sntp
+      Thanks to Jakob Haufe for testing. (Closes: 1033088)
+    - ntpd and ntpq both treat SHA-1 as an alias for SHA1.  NIST uses SHA-1.
+      The crypto package from OpenSSL uses SHA1.
+    - The default crypto type for ntpq is now AES.  RFC 8573 deprecated MD5.
+    - There are now log files with hourly statistics for NTS and NTS-KE
+      traffic: filegen ntsstats and filegen ntskestats,
+    - Fix ntploggps issue where count_used_satellites checked before it is
+      initialized.
+    - Add support for ecdhcurves list.
+    - Fix ntpdig crash when using 2.ntp.pool.org with a host without IPv6
+      support.
+    - ntpdig shows packet delay in JSON output.
+  * Install systemd ntp-units.d file (Closes: 1065567)
+  * Switch pkg-config for pkgconf
+  * Change systemd build-dep to systemd-dev (Closes: 1058451, 1060506)
+
+  [ Simon Hyde ]
+  * Fixup if-up scripts, fixes #1059931/#931414 (Closes: 1059931, 931414)
+
+ -- Richard Laager <rlaager@debian.org>  Sun, 10 Mar 2024 22:01:29 -0500
+
+ntpsec (1.2.2+dfsg1-4) unstable; urgency=medium
+
+  [ Richard Laager ]
+  * Check before calling addgroup/adduser.
+    Thanks to Bob Proulx <bob@proulx.com> (Closes: 1058961)
+  * Fix Python escape sequence warnings.
+    Thanks to Matt Selsky (Closes: 1058060)
+
+  [ Michael Biebl ]
+  * Move NetworkManager hook scripts to /usr/lib (Closes: 1053108)
+
+  [ Santiago Vila ]
+  * Downgrade missing stats dir log severity (Closes: 1049424)
+
+  [ Richard Laager ]
+  * Fix duplicate exit status in man pages (Closes: 1053722)
+
+ -- Richard Laager <rlaager@debian.org>  Sun, 24 Dec 2023 16:30:01 -0600
+
+ntpsec (1.2.2+dfsg1-3) unstable; urgency=high
+
+  [ Helmut Grohne ]
+  * Fix FTBFS when systemd.pc changes systemdsystemunitdir. (Closes: 1052664)
+
+  [ Richard Laager ]
+  * Fix corrupted ntpq output.
+    Thanks to Hal Murray and Bill Sommerfeld (Closes: 1057416)
+
+ -- Richard Laager <rlaager@debian.org>  Sun, 10 Dec 2023 22:02:20 -0600
+
+ntpsec (1.2.2+dfsg1-2) unstable; urgency=high
+
+  * copyright: Update libjsmn comment
+  * copyright: Add minor details from upstream
+  * Drop dependency on lsb-base
+  * Fix file cleanup (Closes: 1036443, 1040354, 1040355)
+  * Backport fix to restore blank lines in ntpq (Closes: 1038876)
+  * apparmor: leap-seconds.list doesn't need "w"
+    Thanks to Hal Murray
+  * Fix IGNORE_DHCP comments.
+    Thanks to Hal Murray
   * Fix cookie crash.
     Thanks to Hal Murray (Closes: 1038422)
 
- -- Richard Laager <rlaager@debian.org>  Sat, 29 Jul 2023 15:52:36 -0500
+ -- Richard Laager <rlaager@debian.org>  Sun, 30 Jul 2023 14:04:02 -0500
 
 ntpsec (1.2.2+dfsg1-1) unstable; urgency=medium
 

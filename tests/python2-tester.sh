@@ -5,7 +5,7 @@
 # This is a clone of option-tester.sh
 # to build with python2 and do minimal (version) testing.
 
-if [ "`which python2 2>/dev/null`" = "" ]
+if [ "`command -v python2 2>/dev/null`" = "" ]
 then
   echo "# Error: No python2 on this system."
   exit 1
@@ -51,7 +51,7 @@ doit ()
 # Build with only one set of options.  The options don't change
 # the Python side of things.
 
-doit python2 "--disable-droproot --disable-mdns-registration --disable-manpage"
+doit python2 "--disable-droproot --disable-mdns-registration --disable-manpage --disable-debug-gdb"
 
 
 grep warning:                    test*/test.log

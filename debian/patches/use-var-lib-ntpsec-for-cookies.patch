@@ -4,8 +4,7 @@ Description: Use /var/lib/ntpsec for cookies
 Forwarded: not-needed
 Origin: vendor
 Author: Richard Laager <rlaager@debian.org>
-Last-Update: 2023-01-16
--
+Last-Update: 2024-03-10
 --- a/docs/NTS-QuickStart.adoc
 +++ b/docs/NTS-QuickStart.adoc
 @@ -129,11 +129,10 @@
@@ -33,7 +32,7 @@ Last-Update: 2023-01-16
  
  +enable+::
    Enable NTS-KE server.
-@@ -96,7 +96,7 @@
+@@ -104,7 +104,7 @@
    The same +aead+ algorithms are also used to encrypt cookies.
    The default is AES_SIV_CMAC_256.  There is no config file option to
    change it, but you can change it by editing the saved cookie key
@@ -44,7 +43,7 @@ Last-Update: 2023-01-16
    rejected so their next 8 NTP requests will be ignored.  They should
 --- a/include/nts.h
 +++ b/include/nts.h
-@@ -13,7 +13,7 @@
+@@ -15,7 +15,7 @@
  /* default file names */
  #define NTS_CERT_FILE "/etc/ntpsec/cert-chain.pem"
  #define NTS_KEY_FILE "/etc/ntpsec/key.pem"

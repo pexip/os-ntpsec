@@ -3,7 +3,7 @@ opts="\
     pasv,\
     compression=xz,repack,\
     dversionmangle=s/\+dfsg\d*$//,\
-    oversionmangle=s/$/+dfsg1/,\
+    oversionmangle=s/$/+dfsg/,\
     pgpsigurlmangle=s/$/.asc/" \
   ftp://ftp.ntpsec.org/pub/releases/@PACKAGE@@ANY_VERSION@@ARCHIVE_EXT@ \
   debian debian/repack-waf

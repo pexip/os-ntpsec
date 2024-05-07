@@ -11,9 +11,13 @@ if [ "$1" = "configure" ]; then
 		# package intentionally does not depend on ntpsec.  Even if it
 		# did, a Pre-Depends would be required, which Policy frowns
 		# upon.
-		addgroup --system --quiet ntpsec
-		adduser --system --quiet --ingroup ntpsec \
-			--no-create-home --home /nonexistent ntpsec
+		if ! getent group ntpsec > /dev/null; then
+			addgroup --system --quiet ntpsec
+		fi
+		if ! getent passwd ntpsec > /dev/null; then
+			adduser --system --quiet --ingroup ntpsec \
+				--no-create-home --home /nonexistent ntpsec
+		fi
 
 		install -o ntpsec -g ntpsec -d /var/log/ntpsec
 		invoke-rc.d ntpsec restart

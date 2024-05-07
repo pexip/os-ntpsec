@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: BSD-2-Clause
  *
  * Section references are to
- * https://tools.ietf.org/html/draft-ietf-ntp-using-nts-for-ntp-15
+ * https://tools.ietf.org/html/rfc8915
  *
  */
 #include "config.h"
@@ -78,7 +78,7 @@ bool nts_probe(struct peer * peer) {
 		return false;
 
 	addrOK = false;
-	clock_gettime(CLOCK_REALTIME, &start);
+	clock_gettime(CLOCK_MONOTONIC, &start);
 
 	if (NULL == hostname) {
 		/* IP Address case */
@@ -98,7 +98,7 @@ bool nts_probe(struct peer * peer) {
 
 	server = open_TCP_socket(peer, hostname);
 	if (-1 == server) {
-		nts_ke_probes_bad++;
+		ntske_cnt.probes_bad++;
 		return false;
 	}
 
@@ -107,7 +107,7 @@ bool nts_probe(struct peer * peer) {
 		ntp_strerror_r(errno, errbuf, sizeof(errbuf));
 		msyslog(LOG_ERR, "NTSc: can't setsockopt: %s", errbuf);
 		close(server);
-		nts_ke_probes_bad++;
+		ntske_cnt.probes_bad++;
 		return false;
 	}
 
@@ -168,18 +168,18 @@ bool nts_probe(struct peer * peer) {
 		goto bail;
 
 	addrOK = true;
-	nts_ke_probes_good++;
+	ntske_cnt.probes_good++;
 
   bail:
 	if (!addrOK) {
-		nts_ke_probes_bad++;
+		ntske_cnt.probes_bad++;
 		peer->nts_state.count = -1;
 	}
 	SSL_shutdown(ssl);
 	SSL_free(ssl);
 	close(server);
 
-	clock_gettime(CLOCK_REALTIME, &finish);
+	clock_gettime(CLOCK_MONOTONIC, &finish);
 	finish = sub_tspec(finish, start);
 	msyslog(LOG_INFO, "NTSc: NTS-KE req to %s took %.3f sec, %s",
 		hostname, tspec_to_d(finish),
@@ -225,6 +225,7 @@ SSL_CTX* make_ssl_client_ctx(const char * filename) {
 
 	ok &= nts_load_versions(ctx);
 	ok &= nts_load_ciphers(ctx);
+	ok &= nts_load_ecdhcurves(ctx);
 	ok &= nts_set_cert_search(ctx, filename);
 
 	if (!ok) {
@@ -271,14 +272,14 @@ int open_TCP_socket(struct peer *peer, const char *hostname) {
 	hints.ai_protocol = IPPROTO_TCP;
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_family = AF(&peer->srcadr);  /* -4, -6 switch */
-	clock_gettime(CLOCK_REALTIME, &start);
+	clock_gettime(CLOCK_MONOTONIC, &start);
 	gai_rc = getaddrinfo(host, port, &hints, &answer);
 	if (0 != gai_rc) {
 		msyslog(LOG_INFO, "NTSc: open_TCP_socket: DNS error trying to contact %s: %d, %s",
 			hostname, gai_rc, gai_strerror(gai_rc));
 		return -1;
 	}
-	clock_gettime(CLOCK_REALTIME, &finish);
+	clock_gettime(CLOCK_MONOTONIC, &finish);
 	finish = sub_tspec(finish, start);
 	msyslog(LOG_INFO, "NTSc: DNS lookup of %s took %.3f sec",
 		hostname, tspec_to_d(finish));

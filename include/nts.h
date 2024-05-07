@@ -10,6 +10,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "ntp_fp.h"
+
 /* default file names */
 #define NTS_CERT_FILE "/etc/ntp/cert-chain.pem"
 #define NTS_KEY_FILE "/etc/ntp/key.pem"
@@ -102,11 +104,11 @@ struct NTS_Key {
   uint8_t K[NTS_MAX_KEYLEN];
   uint32_t I;
   };
-#ifndef NTS_KEYS
+#ifndef NTS_nKEYS
   #define NTS_nKEYS 10
 #endif
 extern struct NTS_Key nts_keys[NTS_nKEYS];
-extern int nts_nKeys;
+extern int nts_nKeys;		/* for tester */
 
 
 /* Client side configuration data for an NTS association
@@ -150,6 +152,7 @@ struct ntsconfig_t {
 	const char * mintls;	/* minimum TLS version allowed */
 	const char * maxtls;	/* maximum TLS version allowed */
 	const char *tlsciphersuites;/* allowed TLS 1.3 ciphersuites */
+	const char *tlsecdhcurves; /* allowed ecdhcurves list*/
 	const char *cert;	/* file holding server certificate key */
 	const char *key;	/* file holding server private key */
 	const char *KI;		/* file holding K/I for making cookies */
@@ -186,6 +189,7 @@ enum nts_errors_type {
 	nts_unrecognized_critical_section = 0,
 	nts_bad_request = 1
 };
+
 
 enum aead_ciphers {
 #define NO_AEAD 0xffff
@@ -236,22 +240,38 @@ extern struct ntsconfig_t ntsconfig;
 
 
 /* NTS-related statistics visible via ntpq -c nts */
-extern uint64_t nts_client_send;
-extern uint64_t nts_client_recv_good;
-extern uint64_t nts_client_recv_bad;
-extern uint64_t nts_server_send;
-extern uint64_t nts_server_recv_good;
-extern uint64_t nts_server_recv_bad;
-extern uint64_t nts_cookie_make;
-extern uint64_t nts_cookie_decode;
-extern uint64_t nts_cookie_decode_old;
-extern uint64_t nts_cookie_decode_old2;
-extern uint64_t nts_cookie_decode_older;
-extern uint64_t nts_cookie_decode_too_old;
-extern uint64_t nts_cookie_decode_error;
-extern uint64_t nts_ke_serves_good;
-extern uint64_t nts_ke_serves_bad;
-extern uint64_t nts_ke_probes_good;
-extern uint64_t nts_ke_probes_bad;
+struct nts_counters {
+  uint64_t client_send;
+  uint64_t client_recv_good;
+  uint64_t client_recv_bad;
+  uint64_t server_send;
+  uint64_t server_recv_good;
+  uint64_t server_recv_bad;
+  uint64_t cookie_make;
+  uint64_t cookie_not_server;   /* we are not a NTS server */
+  uint64_t cookie_decode_total; /* total attempts, includes too old */
+  uint64_t cookie_decode_current;
+  uint64_t cookie_decode_old;
+  uint64_t cookie_decode_old2;
+  uint64_t cookie_decode_older;
+  uint64_t cookie_decode_too_old; /* or garbage */
+  uint64_t cookie_decode_error;
+};
+struct ntske_counters {
+  uint64_t serves_good;
+  l_fp     serves_good_wall;
+  l_fp     serves_good_cpu;
+  uint64_t serves_nossl;
+  l_fp     serves_nossl_wall;
+  l_fp     serves_nossl_cpu;
+  uint64_t serves_bad;
+  l_fp     serves_bad_wall;
+  l_fp     serves_bad_cpu;
+  uint64_t probes_good;
+  uint64_t probes_bad;
+};
+extern struct nts_counters nts_cnt, old_nts_cnt;
+extern struct ntske_counters ntske_cnt, old_ntske_cnt;
+
 
 #endif /* GUARD_NTS_H */

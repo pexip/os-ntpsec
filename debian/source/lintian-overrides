@@ -2,3 +2,7 @@
 # Debian-specific.  The latter is not installed by default upstream and thus
 # has no upstream man page.
 ntpsec source: maintainer-manual-page
+
+# These are transitional packages.
+ntpsec source: duplicate-long-description ntp ntp-doc ntpdate [debian/control]
+ntpsec source: duplicate-short-description ntpdate sntp [debian/control]

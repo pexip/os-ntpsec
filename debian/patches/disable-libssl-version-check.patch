@@ -4,10 +4,10 @@ Description: Disable libssl version check
 Forwarded: not-needed
 Origin: vendor
 Author: Richard Laager <rlaager@debian.org>
-Last-Update: 2020-12-21
+Last-Update: 2024-03-10
 --- a/ntpd/nts.c
 +++ b/ntpd/nts.c
-@@ -94,10 +94,6 @@
+@@ -98,10 +98,6 @@
  		msyslog(LOG_INFO, "INIT: Running with %s, %lx",
  			OpenSSL_version(OPENSSL_VERSION),
  			OpenSSL_version_num());

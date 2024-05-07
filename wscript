@@ -298,7 +298,6 @@ def configure(ctx):
         ctx.env.LDFLAGS += ["-lssp_nonshared"]
 
     cc_test_flags = [
-        ('f_stack_protector_all', '-fstack-protector-all'),
         ('PIC', '-fPIC'),
         ('PIE', '-pie -fPIE'),
         # this quiets most of macOS warnings on -fpie
@@ -332,12 +331,13 @@ def configure(ctx):
 
     # Check which linker flags are supported
     ld_hardening_flags = [
+        ('f_stack_protector_all', '-fstack-protector-all'),
         ("z_now", "-Wl,-z,now"),     # no deferred symbol resolution
     ]
 
     # we prepend our options to CFLAGS, this allows user provided
     # CFLAGS to override our computed CFLAGS
-    if ctx.options.enable_debug_gdb:
+    if not ctx.options.disable_debug_gdb:
         ctx.env.CFLAGS = ["-g"] + ctx.env.CFLAGS
         ctx.define("USEBACKTRACE", "1", quote=False)
     else:
@@ -366,7 +366,9 @@ def configure(ctx):
             # "-Wnested-externs",     # incompatible w/ Unity...
             # "-Wpadded",             # duck... over 3k warnings
             # "-Wredundant-decls",    # incompatible w/ Unity
-            "-Wswitch-default",       # warns on Bison bug
+            "-Wswitch-default",       # warns on missing switch-default
+                                        # old Bison triggers this
+            "-Wswitch-enum",          # warns on missing enum case handler
         ] + ctx.env.CFLAGS
         cc_test_flags += [
             ('w_implicit_fallthru', "-Wimplicit-fallthrough=3"),
@@ -621,7 +623,8 @@ int main(int argc, char **argv) {
     for header, sizeof in sorted(sizeofs, key=lambda x: x[1:]):
         check_sizeof(ctx, header, sizeof)
 
-    if not ctx.options.disable_nts:
+    # Parts of attic need libssl
+    if not ctx.options.disable_nts or ctx.options.enable_attic:
         # Check via pkg-config first, then fall back to a direct search
         if not ctx.check_cfg(
             package='libssl', uselib_store='SSL',
@@ -718,6 +721,7 @@ int main(int argc, char **argv) {
         "linux/serial.h",
         "net/if6.h",
         ("net/route.h", ["sys/types.h", "sys/socket.h", "net/if.h"]),
+        "openssl/opensslv.h",  # just for wafhelper OpenSSL 
         "priv.h",           # Solaris
         "stdatomic.h",
         "sys/clockctl.h",   # NetBSD
@@ -880,8 +884,10 @@ int main(int argc, char **argv) {
     if not ctx.env.DISABLE_NTS:
         from wafhelpers.openssl import check_libssl_tls13
         from wafhelpers.openssl import check_openssl_bad_version
+        from wafhelpers.openssl import dump_openssl_version
         check_libssl_tls13(ctx)
         check_openssl_bad_version(ctx)
+        dump_openssl_version(ctx)
 
     # before write_config()
     if ctx.is_defined("HAVE_LINUX_CAPABILITY"):

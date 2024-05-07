@@ -1,9 +1,6 @@
 # Accepted upstream
-0001-Avoid-installation-of-runtests-from-libaes_siv-test-.patch
 
 # Forwarded
-0001-Write-pidfile-in-parent.patch
-fix-cookie-crash.patch
 
 # Forwarding not needed
 systemd-rename-service.patch
@@ -24,3 +21,4 @@ set-statsdir-by-default.patch
 use-private-dir-for-libntpc.patch
 disable-libssl-version-check.patch
 ntpdate-disable-json.patch
+downgrade-missing-stats-dir-log-severity.patch

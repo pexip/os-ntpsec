@@ -1,9 +1,9 @@
-debian/tmp/lib/systemd/system/ntplogtemp.service
-debian/tmp/lib/systemd/system/ntplogtemp.timer
-debian/tmp/lib/systemd/system/ntpviz-daily.service
-debian/tmp/lib/systemd/system/ntpviz-daily.timer
-debian/tmp/lib/systemd/system/ntpviz-weekly.service
-debian/tmp/lib/systemd/system/ntpviz-weekly.timer
+debian/tmp/${env:systemdsystemunitdir}/ntplogtemp.service
+debian/tmp/${env:systemdsystemunitdir}/ntplogtemp.timer
+debian/tmp/${env:systemdsystemunitdir}/ntpviz-daily.service
+debian/tmp/${env:systemdsystemunitdir}/ntpviz-daily.timer
+debian/tmp/${env:systemdsystemunitdir}/ntpviz-weekly.service
+debian/tmp/${env:systemdsystemunitdir}/ntpviz-weekly.timer
 debian/tmp/usr/bin/ntpviz
 debian/tmp/usr/sbin/ntploggps
 debian/tmp/usr/sbin/ntplogtemp

@@ -553,6 +553,8 @@ usage: timeout [ msec ]
                         self.say("%s  %s\n" % (legend, modes[value]))
                     except IndexError:
                         self.say("%s  %s%d\n" % (legend, "mode#", value))
+                    except TypeError:
+                        self.say("%s  mode: %s\n" % (legend, repr(value)))
                 elif fmt == NTP_PACKETS:
                     self.say(
                         "{0:<13} {1[0]:>13} {1[1]:>10}{1[2]:<3}\n".format(
@@ -851,6 +853,8 @@ usage: ntpversion [version number]
             self.say("Keytype: %s\n" % self.session.keytype)
         elif line.upper() in ['AES', 'AES128CMAC']:
             self.session.keytype = 'AES-128'
+        elif line.upper() in ['SHA-1']:
+            self.session.keytype = 'SHA1'
         elif not ntp.ntpc.checkname(line.upper()):
             self.warn("Keytype %s is not supported by openSSL or ntpq.\n" % line)
         else:
@@ -1562,9 +1566,9 @@ usage: kerninfo
             ("ss_thisver",   "current version:      ", NTP_PACKETS),
             ("ss_oldver",    "older version:        ", NTP_PACKETS),
             ("ss_ver1",      "NTPv1 total:          ", NTP_PACKETS),
-            ("ss_ver1client","NTPv1 clients:        ", NTP_PACKETS),
-            ("ss_ver1zero",  "NTPv1 mode0:          ", NTP_PACKETS),
-            ("ss_ver1symm",  "NTPv1 symm act:       ", NTP_PACKETS),
+            ("ss_ver1client"," NTPv1 clients:       ", NTP_PACKETS),
+            ("ss_ver1zero",  " NTPv1 mode0:         ", NTP_PACKETS),
+            ("ss_ver1symm",  " NTPv1 symm act:      ", NTP_PACKETS),
             ("ss_badformat", "bad length or format: ", NTP_PACKETS),
             ("ss_badauth",   "authentication failed:", NTP_PACKETS),
             ("ss_declined",  "declined:             ", NTP_PACKETS),
@@ -1648,30 +1652,64 @@ usage: authinfo
     def do_ntsinfo(self, _line):
         "display NTS authentication counters"
         ntsinfo = (
-   ("nts_client_send",           "NTS client sends:          ", NTP_UINT),
-   ("nts_client_recv_good",      "NTS client recvs good:     ", NTP_UINT),
-   ("nts_client_recv_bad",       "NTS client recvs w error:  ", NTP_UINT),
-   ("nts_server_recv_good",      "NTS server recvs good:     ", NTP_UINT),
-   ("nts_server_recv_bad",       "NTS server recvs w error:  ", NTP_UINT),
-   ("nts_server_send",           "NTS server sends:          ", NTP_UINT),
-   ("nts_cookie_make",           "NTS make cookies:          ", NTP_UINT),
-   ("nts_cookie_decode",         "NTS decode cookies:        ", NTP_UINT),
-   ("nts_cookie_decode_old",     "NTS decode cookies old:    ", NTP_UINT),
-   ("nts_cookie_decode_old2",    "NTS decode cookies old2:   ", NTP_UINT),
-   ("nts_cookie_decode_older",   "NTS decode cookies older:  ", NTP_UINT),
-   ("nts_cookie_decode_too_old", "NTS decode cookies too old:", NTP_UINT),
-   ("nts_cookie_decode_error",   "NTS decode cookies error:  ", NTP_UINT),
-   ("nts_ke_probes_good",        "NTS KE client probes good: ", NTP_UINT),
-   ("nts_ke_probes_bad",         "NTS KE client probes bad:  ", NTP_UINT),
-   ("nts_ke_serves_good",        "NTS KE serves good:        ", NTP_UINT),
-   ("nts_ke_serves_bad",         "NTS KE serves bad:         ", NTP_UINT),
+   ("nts_client_send",           "NTS client sends:           ", NTP_UINT),
+   ("nts_client_recv_good",      "NTS client recvs good:      ", NTP_UINT),
+   ("nts_client_recv_bad",       "NTS client recvs w error:   ", NTP_UINT),
+   ("nts_server_recv_good",      "NTS server recvs good:      ", NTP_UINT),
+   ("nts_server_recv_bad",       "NTS server recvs w error:   ", NTP_UINT),
+   ("nts_server_send",           "NTS server sends:           ", NTP_UINT),
+   ("nts_cookie_make",           "NTS make cookies:           ", NTP_UINT),
+   ("nts_cookie_not_server",     "NTS cookies not server:     ", NTP_UINT),
+   ("nts_cookie_decode_total",   "NTS decode cookies total:   ", NTP_UINT),
+   ("nts_cookie_decode_current", " NTS decode cookies current:", NTP_UINT),
+   ("nts_cookie_decode_old",     " NTS decode cookies old:    ", NTP_UINT),
+   ("nts_cookie_decode_old2",    " NTS decode cookies old2:   ", NTP_UINT),
+   ("nts_cookie_decode_older",   " NTS decode cookies older:  ", NTP_UINT),
+   ("nts_cookie_decode_too_old", " NTS decode cookies too old:", NTP_UINT),
+   ("nts_cookie_decode_error",   "NTS decode cookies error:   ", NTP_UINT),
+  )
+        ntskeinfo = (
+   ("nts_ke_serves_good",        "NTS KE serves good:         ", NTP_UINT),
+   ("nts_ke_serves_good_wall",   "NTS KE serves good wall:    ", NTP_FLOAT),
+   ("nts_ke_serves_good_cpu",    "NTS KE serves good CPU:     ", NTP_FLOAT),
+   ("nts_ke_serves_nossl",       "NTS KE serves no-TLS:       ", NTP_UINT),
+   ("nts_ke_serves_nossl_wall",  "NTS KE serves no-TLS wall:  ", NTP_FLOAT),
+   ("nts_ke_serves_nossl_cpu",   "NTS KE serves no-TLS CPU:   ", NTP_FLOAT),
+   ("nts_ke_serves_bad",         "NTS KE serves bad:          ", NTP_UINT),
+   ("nts_ke_serves_bad_wall",    "NTS KE serves bad wall:     ", NTP_FLOAT),
+   ("nts_ke_serves_bad_cpu",     "NTS KE serves bad CPU:      ", NTP_FLOAT),
+   ("nts_ke_probes_good",        "NTS KE client probes good:  ", NTP_UINT),
+   ("nts_ke_probes_bad",         "NTS KE client probes bad:   ", NTP_UINT),
   )
         self.collect_display(associd=0, variables=ntsinfo, decodestatus=False)
+        self.collect_display(associd=0, variables=ntskeinfo, decodestatus=False)
 
     def help_ntsinfo(self):
         self.say("""\
 function: display NTS authentication counters
 usage: ntsinfo
+""")
+
+
+    def do_mssntpinfo(self, _line):
+        "display MSSNTP authentication counters"
+        mssntpinfo = (
+   ("mssntp_serves",              "MSSNTP requests processed:     ", NTP_UINT),
+   ("mssntp_serves_no",           "MSSNTP rejected by samba:      ", NTP_UINT),
+   ("mssntp_serves_err",          "MSSNTP errors talking to samba:", NTP_UINT),
+   ("mssntp_serves_good",         "MSSNTP requests good:          ", NTP_UINT),
+   ("mssntp_serves_good_wall",    "MSSNTP requests good wall:     ", NTP_FLOAT),
+   ("mssntp_serves_good_slowest", "MSSNTP requests good slowest:  ", NTP_FLOAT),
+   ("mssntp_serves_bad",          "MSSNTP requests bad:           ", NTP_UINT),
+   ("mssntp_serves_bad_wall",     "MSSNTP requests bad wall:      ", NTP_FLOAT),
+   ("mssntp_serves_bad_slowest",  "MSSNTP requests bad slowest:   ", NTP_FLOAT),
+  )
+        self.collect_display(associd=0, variables=mssntpinfo, decodestatus=False)
+
+    def help_mssntpinfo(self):
+        self.say("""\
+function: display MSSNTP authentication counters
+usage: mssntpinfo
 """)
 
 
@@ -1757,10 +1795,7 @@ USAGE: ntpq [-46dphinOV] [-c str] [-D lvl] [host ...]
 
 if __name__ == '__main__':
     bin_ver = "ntpsec-@NTPSEC_VERSION_EXTENDED@"
-    if ntp.util.stdversion() != bin_ver:
-        sys.stderr.write("Module/Binary version mismatch\n")
-        sys.stderr.write("Binary: %s\n" % bin_ver)
-        sys.stderr.write("Module: %s\n" % ntp.util.stdversion())
+    ntp.util.stdversioncheck(bin_ver)
     try:
         (options, arguments) = getopt.getopt(
             sys.argv[1:],
@@ -1878,9 +1913,13 @@ if __name__ == '__main__':
             session.openhost(*interpreter.chosts[0])
             interpreter.cmdloop()
         else:
+            latter = False
             for ihost in interpreter.chosts:
                 if session.openhost(*ihost):
                     for command in interpreter.ccmds:
+                        if latter:
+                            print()
+                        latter = True
                         interpreter.onecmd(interpreter.precmd(command))
                     session.close()
         raise SystemExit(0)

@@ -16,7 +16,7 @@ then
 fi
 
 PURGE=""
-if which pkg-config
+if command -v pkg-config
 then
   SECCOMP="$(pkg-config libseccomp --variable=includedir)"
   SECCOMP="$SECCOMP/seccomp.h"
@@ -88,16 +88,16 @@ doit ()
 }
 
 # no --disable-manpage on default and all
-doit default ""
-doit minimal "--disable-droproot --disable-mdns-registration --disable-doc --disable-manpage"
+doit default "--disable-debug-gdb"
+doit minimal "--disable-droproot --disable-mdns-registration --disable-doc --disable-manpage --disable-debug-gdb"
 
 # This also tests refclocks without DEBUG
-doit classic "--enable-classic-mode --refclock=all --disable-doc --disable-manpage --enable-pylib=ffi"
+doit classic "--enable-classic-mode --refclock=all --disable-doc --disable-manpage --enable-pylib=ffi --disable-debug-gdb"
 
-doit all     "--enable-warnings --enable-attic --enable-debug --enable-debug-gdb --enable-debug-timing --refclock=all --enable-leap-smear --enable-mssntp --enable-early-droproot --disable-fuzz $LINUX --disable-doc --disable-manpage --enable-pylib=ext"
+doit all     "--enable-warnings --enable-attic --enable-debug --enable-debug-timing --refclock=all --enable-leap-smear --enable-mssntp --enable-early-droproot --disable-fuzz $LINUX --disable-doc --disable-manpage --enable-pylib=ext"
 
-if [ "`which asciidoc 2>/dev/null`" != "" -a \
-     "`which xsltproc 2>/dev/null`" != "" ]
+if [ "`command -v asciidoc 2>/dev/null`" != "" -a \
+     "`command -v xsltproc 2>/dev/null`" != "" ]
 then
 doit doc     ""
 fi

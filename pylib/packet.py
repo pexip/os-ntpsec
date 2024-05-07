@@ -56,7 +56,7 @@ the general structure of an NTP packet (Figure 8):
       |                          Key Identifier                       |
       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
       |                                                               |
-      |                           digest (128)                        |
+      |                          MAC (128/160)                        |
       |                                                               |
       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
@@ -143,17 +143,16 @@ If you look at the raw data, there are 3 unknowns:
    * clock offset
 but there are only two equations, so you can't solve it.
 
-NTP gets the 3rd equation by assuming the transit times are equal.  That lets
-it solve for the clock offset.
+NTP gets the 3rd equation by assuming the transit times are equal.  That 
+lets it solve for the clock offset.
 
-If you assume that both clocks are accurate which is reasonable if you have
-GPS at both ends, then you can easily solve for the transit times in each
-direction.
+If you assume that both clocks are accurate which is reasonable if you 
+have GPS at both ends, then you can easily solve for the transit times 
+in each direction.
 
-The RFC 5905 diagram is slightly out of date in that the digest header assumes
-a 128-bit (16-octet) MD5 hash, but it is also possible for the field to be a
-128-bit AES_CMAC hash or 160-bit (20-octet) SHA-1 hash.  NTPsec will
-support any 128- or 160-bit MAC type in libcrypto.
+The RFC 5905 diagram is slightly out of date in that the MAC header 
+assumes a 128 or 160-bit (16 or 20-octet) MAC. NTPsec supports all 
+appropriate algorithms in libcrypto.
 
 An extension field consists of a 16-bit network-order type field
 length, followed by a 16-bit network-order payload length in octets,
@@ -189,7 +188,7 @@ Here's what a Mode 6 packet looks like:
       |                          Key Identifier                       |
       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
       |                                                               |
-      |                           digest (128)                        |
+      |                          MAC (128/160)                        |
       |                                                               |
       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
@@ -258,7 +257,7 @@ MAX_KEYID = 0xFFFF
 MODE_SIX_HEADER_LENGTH = 12
 MINIMUM_MAC_LENGTH = 16
 KEYID_LENGTH = 4
-MODE_SIX_ALIGNMENT = 8
+MODE_SIX_ALIGNMENT = 4
 MAX_BARE_MAC_LENGTH = 20
 
 
@@ -359,16 +358,14 @@ class SyncPacket(Packet):
          self.transmit_timestamp) = struct.unpack(
             SyncPacket.format, data[:SyncPacket.HEADER_LEN])
         self.extension = data[SyncPacket.HEADER_LEN:]
-        # Parse the extension field if present. We figure out whether
-        # an extension field is present by measuring the MAC size. If
-        # the number of 4-octet words following the packet header is
-        # 0, no MAC is present and the packet is not authenticated. If
-        # 1, the packet is a crypto-NAK; if 3, the packet is
-        # authenticated with DES; if 5, the packet is authenticated
-        # with MD5; if 6, the packet is authenticated with SHA1. If 2
-        # or 4, the packet is a runt and discarded forthwith. If
-        # greater than 6, an extension field is present, so we
-        # subtract the length of the field and go around again.
+        # Parse any present extension fields. We determine the presence
+        # of an extension field by measuring the trailer size. If the
+        # number of 4-octet words following the packet header is 0, there
+        # is no MAC, and the packet is unauthenticated. If 1, the missive
+        # is a crypto-NAK; if 5 or 6, register authentication. If 2, 3, or
+        # 4 the datagram is a runt and discarded immediately. If greater
+        # than 6, an extension field is present, so we subtract the fields'
+        # length and repeat.
         payload = self.extension  # Keep extension intact for flatten()
         while len(payload) > 24:
             (ftype, flen) = struct.unpack("!II", payload[:8])
@@ -376,11 +373,9 @@ class SyncPacket(Packet):
             payload = payload[8+flen:]
         if len(payload) == 4:    # Crypto-NAK
             self.mac = payload
-        elif len(payload) == 12:   # DES
-            raise SyncException("Unsupported DES authentication")
-        elif len(payload) in (8, 16):
+        elif len(payload) in (8, 12, 16):
             raise SyncException("Packet is a runt")
-        elif len(payload) in (20, 24):   # MD5 or SHA1
+        elif len(payload) in (20, 24):   # Symmetric authentication
             self.mac = payload
 
     @staticmethod
@@ -726,7 +721,7 @@ class ControlSession:
         # Packet version number we use
         self.pktversion = ntp.magic.NTP_OLDVERSION + 1
         self.always_auth = False  # Always send authenticated requests
-        self.keytype = "MD5"
+        self.keytype = "AES"
         self.keyid = None
         self.passwd = None
         self.auth = None
@@ -941,7 +936,7 @@ class ControlSession:
         # Pad out packet to a multiple of 8 octets to be sure
         # receiver can handle it. Note: these pad bytes should
         # *not* be counted in the header count field.
-        while ((ControlPacket.HEADER_LEN + len(pkt.extension)) & 7):
+        while ((ControlPacket.HEADER_LEN + len(pkt.extension)) & (MODE_SIX_ALIGNMENT - 1)):
             pkt.extension += b"\x00"
 
         # Do the MAC compuation.
@@ -1046,7 +1041,7 @@ class ControlSession:
                                      (len(rawdata), (_pend + KEYID_LENGTH + MINIMUM_MAC_LENGTH)))
                     self._authpass = False
                 elif not self.auth.verify_mac(rawdata, packet_end=_pend,
-                                            mac_begin=_pend):
+                                              mac_begin=_pend):
                     self._authpass = False
 
             # Clip off the MAC, if any
@@ -1112,7 +1107,7 @@ class ControlSession:
                                 % (f, len(fragments)), 1)
                         break
                 else:
-                    tempfraglist = [ntp.poly.polystr(f.extension) \
+                    tempfraglist = [ntp.poly.polystr(f.extension)
                                     for f in fragments]
                     self.response = ntp.poly.polybytes("".join(tempfraglist))
                     warndbg("Fragment collection ends. %d bytes "
@@ -1363,7 +1358,7 @@ This combats source address spoofing
                         idx = int(idx)
                     except ValueError:
                         raise ControlException(SERR_BADTAG % tag)
-                    ### Does not check missing/gappy entries
+                    # Does not check missing/gappy entries
                     if idx not in fake_list:
                         fake_dict[str(idx)] = {}
                         fake_list.append(idx)
@@ -1709,7 +1704,7 @@ class Authenticator:
                     keytype = 'AES-128'
                 if len(passwd) > 20:
                     # if len(passwd) > 64:
-                        # print('AUTH: Truncating key %s to 256bits (32Bytes)' % keyid)
+                    #      print('AUTH: Truncating key %s to 256bits (32Bytes)' % keyid)
                     passwd = ntp.util.hexstr2octets(passwd[:64])
                 self.passwords[int(keyid)] = (keytype, passwd)
 
@@ -1747,7 +1742,7 @@ class Authenticator:
         if not ntp.ntpc.checkname(keytype):
             return False
         mac2 = ntp.ntpc.mac(ntp.poly.polybytes(payload),
-                            ntp.poly.polybytes(passwd), keytype)
+                            ntp.poly.polybytes(passwd), keytype)[:20]
         if not mac2 or len(mac2) == 0:
             return b''
         return struct.pack("!I", keyid) + mac2
@@ -1773,12 +1768,12 @@ class Authenticator:
         if not ntp.ntpc.checkname(keytype):
             return False
         mac2 = ntp.ntpc.mac(ntp.poly.polybytes(payload),
-                            ntp.poly.polybytes(passwd), keytype)
+                            ntp.poly.polybytes(passwd), keytype)[:20]
         if not mac2:
             return False
         # typically preferred to avoid timing attacks client-side (in theory)
         try:
-            return hmac.compare_digest(mac, mac2) # supported 2.7.7+ and 3.3+
+            return hmac.compare_digest(mac, mac2)  # supported 2.7.7+ and 3.3+
         except AttributeError:
             return mac == mac2  # solves issue #666
 

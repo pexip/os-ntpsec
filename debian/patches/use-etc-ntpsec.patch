@@ -4,7 +4,7 @@ Description: Use /etc/ntpsec
 Forwarded: not-needed
 Origin: vendor
 Author: Richard Laager <rlaager@debian.org>
-Last-Update: 2023-01-16
+Last-Update: 2024-03-10
 --- a/docs/includes/ntp-conf-body.adoc
 +++ b/docs/includes/ntp-conf-body.adoc
 @@ -3,7 +3,7 @@
@@ -27,10 +27,10 @@ Last-Update: 2023-01-16
 +`/etc/ntpsec/ntp.keys`::
    private keys
  
- One of the following exit values will be returned:
+ == SEE ALSO
 --- a/docs/includes/ntp.keys-body.adoc
 +++ b/docs/includes/ntp.keys-body.adoc
-@@ -80,7 +80,7 @@
+@@ -79,7 +79,7 @@
  
  == FILES
  
@@ -109,7 +109,7 @@ Last-Update: 2023-01-16
  PREFETCH="60 days"
 --- a/ntpd/ntp_config.c
 +++ b/ntpd/ntp_config.c
-@@ -3037,7 +3037,7 @@
+@@ -3041,7 +3041,7 @@
  
  
  /*
@@ -131,7 +131,7 @@ Last-Update: 2023-01-16
  	SCMP_SYS(getdents64),
 --- a/pylib/packet.py
 +++ b/pylib/packet.py
-@@ -1728,7 +1728,7 @@
+@@ -1723,7 +1723,7 @@
                  return (keyid,) + self.passwords[keyid]
              else:
                  return (keyid, None, None)
@@ -197,8 +197,8 @@ Last-Update: 2023-01-16
  WARNING: +ntpkeygen+ uses the system randomness source.  On a POSIX
 --- a/include/nts.h
 +++ b/include/nts.h
-@@ -11,8 +11,8 @@
- #include <stdint.h>
+@@ -13,8 +13,8 @@
+ #include "ntp_fp.h"
  
  /* default file names */
 -#define NTS_CERT_FILE "/etc/ntp/cert-chain.pem"
@@ -210,7 +210,7 @@ Last-Update: 2023-01-16
  #define NTS_KE_PORT		4460
 --- a/ntpclients/ntpq.py
 +++ b/ntpclients/ntpq.py
-@@ -638,7 +638,7 @@
+@@ -640,7 +640,7 @@
          except ntp.packet.ControlException as e:
              self.warn(e.message)
          except IOError:
@@ -219,7 +219,7 @@ Last-Update: 2023-01-16
  
      def help_passwd(self):
          self.say("""\
-@@ -1271,7 +1271,7 @@
+@@ -1275,7 +1275,7 @@
              self.warn(e.message)
              return
          except IOError:
@@ -228,7 +228,7 @@ Last-Update: 2023-01-16
              return
          if self.debug > 2:
              self.warn("In Config\nKeyword = :config\nCommand = %s" % line)
-@@ -1457,7 +1457,7 @@
+@@ -1461,7 +1461,7 @@
              self.warn(e.message)
              return
          except IOError:
@@ -237,7 +237,7 @@ Last-Update: 2023-01-16
  
      def help_ifstats(self):
          self.say("""\
-@@ -1482,7 +1482,7 @@
+@@ -1486,7 +1486,7 @@
              self.warn(e.message)
              return
          except IOError:

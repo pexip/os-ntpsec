@@ -5,7 +5,7 @@
 # This is meant to be run by uscan(1) as the "command param", after repacking
 # (if any) by mk-origtargz.  Do not use "repacksuffix" in debian/watch; use:
 #   version=4
-#   opts="dversionmangle=s/\+dfsg\d*$//,oversionmangle=s/$/+dfsg1/" \
+#   opts="dversionmangle=s/\+dfsg\d*$//,oversionmangle=s/$/+dfsg/" \
 #     https://example.com/releases/@PACKAGE@@ANY_VERSION@@ARCHIVE_EXT@ \
 #     debian debian/repack-waf
 #
