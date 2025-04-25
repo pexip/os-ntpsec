@@ -227,7 +227,7 @@ def find_program(self,filename,**kw):
 	msg=kw.get('msg',', '.join(filename))
 	var=kw.get('var','')
 	if not var:
-		var=re.sub(r'[-.]','_',filename[0].upper())
+		var=re.sub(r'\W','_',filename[0].upper())
 	path_list=kw.get('path_list','')
 	if path_list:
 		path_list=Utils.to_list(path_list)

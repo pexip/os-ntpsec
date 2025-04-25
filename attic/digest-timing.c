@@ -17,6 +17,7 @@
  * 0x1000105fL 1.0.1e works.
  */
 
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -29,18 +30,15 @@
 #include <openssl/md5.h>
 #include <openssl/rand.h>
 #include <openssl/objects.h>
-#if OPENSSL_VERSION_NUMBER > 0x20000000L
 #include <openssl/ssl.h>
-#endif
 
 #define UNUSED_ARG(arg)         ((void)(arg))
 
-#ifndef EVP_MD_CTX_reset
+#ifndef EVP_MD_CTX_new
 /* Slightly older version of OpenSSL */
 /* Similar hack in ssl_init.c */
 #define EVP_MD_CTX_new() EVP_MD_CTX_create()
 #define EVP_MD_CTX_free(ctx) EVP_MD_CTX_destroy(ctx)
-#define EVP_MD_CTX_reset(ctx) EVP_MD_CTX_init(ctx)
 #endif
 
 
@@ -49,11 +47,13 @@
 
 int NUM = 1000000;
 
+bool do_all = false;
+
 #define PACKET_LENGTH 48
 /* Nothing magic about these key lengths.
  * ntpkeygen just happens to label things this way.
+ * Most distros support these 4 and no others.
  */
-#define AES_KEY_LENGTH 16
 #define MD5_KEY_LENGTH 16
 #define SHA1_KEY_LENGTH 20
 #define MAX_KEY_LENGTH 64
@@ -66,34 +66,39 @@ SSL_CTX *ssl;
 
 static void ssl_init(void)
 {
+#if OPENSSL_VERSION_NUMBER > 0x20000000L
+        OPENSSL_init_ssl(OPENSSL_INIT_LOAD_SSL_STRINGS|OPENSSL_INIT_LOAD_CRYPTO_STRINGS|OPENSSL_INIT_ADD_ALL_CIPHERS|OPENSSL_INIT_ADD_ALL_DIGESTS, NULL);
+	ssl = SSL_CTX_new(TLS_client_method());
+	if (NULL == ssl) {
+		printf("SSL_CTX_new() failed.\n");
+		exit(1);
+	}
+#else
 	ERR_load_crypto_strings();
 	OpenSSL_add_all_digests();
 	OpenSSL_add_all_ciphers();
-	ctx = EVP_MD_CTX_new();
-#if OPENSSL_VERSION_NUMBER > 0x20000000L
-	ssl = SSL_CTX_new(TLS_client_method());
 #endif
+	ctx = EVP_MD_CTX_new();
 }
 
 static unsigned int SSL_Digest(
   const EVP_MD *digest,   /* hash algorithm */
   uint8_t *key,           /* key pointer */
-  int     keylength,       /* key size */
+  int     keylength,      /* key size */
   uint8_t *pkt,           /* packet pointer */
   int     pktlength       /* packet length */
 ) {
 	unsigned char answer[EVP_MAX_MD_SIZE];
 	unsigned int len;
-	EVP_MD_CTX_reset(ctx);
-	EVP_DigestInit(ctx, digest);
+	EVP_DigestInit_ex(ctx, digest, NULL);
 	EVP_DigestUpdate(ctx, key, keylength);
 	EVP_DigestUpdate(ctx, pkt, pktlength);
-	EVP_DigestFinal(ctx, answer, &len);
+	EVP_DigestFinal_ex(ctx, answer, &len);
 	return len;
 }
 
 static unsigned int SSL_DigestSlow(
-  int type,               /* hash algorithm */
+  const char *name,       /* hash algorithm */
   uint8_t *key,           /* key pointer */
   int     keylength,      /* key size */
   uint8_t *pkt,           /* packet pointer */
@@ -103,7 +108,7 @@ static unsigned int SSL_DigestSlow(
 	unsigned char answer[EVP_MAX_MD_SIZE];
 	unsigned int len;
 	ctxx = EVP_MD_CTX_new();
-	EVP_DigestInit(ctxx, EVP_get_digestbynid(type));
+	EVP_DigestInit(ctxx, EVP_get_digestbyname(name));
 	EVP_DigestUpdate(ctxx, key, keylength);
 	EVP_DigestUpdate(ctxx, pkt, pktlength);
 	EVP_DigestFinal(ctxx, answer, &len);
@@ -119,8 +124,7 @@ static void DoDigest(
   int     pktlength       /* packet length */
 )
 {
-	int type = OBJ_sn2nid(name);
-	const EVP_MD *digest = EVP_get_digestbynid(type);
+	const EVP_MD *digest = EVP_get_digestbyname(name);
 	struct timespec start, stop;
 	double fast, slow;
 	unsigned int digestlength = 0;
@@ -153,7 +157,7 @@ static void DoDigest(
 #ifdef DoSLOW
 	clock_gettime(CLOCK_MONOTONIC, &start);
 	for (int i = 0; i < NUM; i++) {
-		digestlength = SSL_DigestSlow(type, key, keylength, pkt, pktlength);
+		digestlength = SSL_DigestSlow(name, key, keylength, pkt, pktlength);
 	}
 	clock_gettime(CLOCK_MONOTONIC, &stop);
 	slow = (stop.tv_sec-start.tv_sec)*1E9 + (stop.tv_nsec-start.tv_nsec);
@@ -169,8 +173,9 @@ int main(int argc, char *argv[])
 	uint8_t key[MAX_KEY_LENGTH];
 	uint8_t packet[PACKET_LENGTH];
 
-	UNUSED_ARG(argc);
 	UNUSED_ARG(argv);
+
+	if (argc>1) do_all = true;
 
 	setlinebuf(stdout);
 
@@ -183,24 +188,21 @@ int main(int argc, char *argv[])
 	printf("# Digest    KL PL DL  ns/op sec/run     slow   %% diff\n");
 
 	DoDigest("MD5",    key, MD5_KEY_LENGTH, packet, PACKET_LENGTH);
+	DoDigest("SHA1",   key, MD5_KEY_LENGTH, packet, PACKET_LENGTH);
+	DoDigest("SHA1",   key, SHA1_KEY_LENGTH, packet, PACKET_LENGTH);
+
+if (do_all) {
+	DoDigest("MD5",    key, MD5_KEY_LENGTH, packet, PACKET_LENGTH);
 	DoDigest("MD5",    key, MD5_KEY_LENGTH-1, packet, PACKET_LENGTH);
 	DoDigest("MD5",    key, SHA1_KEY_LENGTH, packet, PACKET_LENGTH);
 	DoDigest("SHA1",   key, MD5_KEY_LENGTH, packet, PACKET_LENGTH);
 	DoDigest("SHA1",   key, SHA1_KEY_LENGTH, packet, PACKET_LENGTH);
 	DoDigest("SHA1",   key, SHA1_KEY_LENGTH-1, packet, PACKET_LENGTH);
-	DoDigest("SHA224", key, 16, packet, PACKET_LENGTH);
-	DoDigest("SHA224", key, 20, packet, PACKET_LENGTH);
 	DoDigest("SHA256", key, 16, packet, PACKET_LENGTH);
 	DoDigest("SHA256", key, 20, packet, PACKET_LENGTH);
 	DoDigest("SHA384", key, 16, packet, PACKET_LENGTH);
 	DoDigest("SHA384", key, 20, packet, PACKET_LENGTH);
-	DoDigest("SHA512", key, 16, packet, PACKET_LENGTH);
-	DoDigest("SHA512", key, 20, packet, PACKET_LENGTH);
-	DoDigest("SHA512", key, 24, packet, PACKET_LENGTH);
-	DoDigest("SHA512", key, 32, packet, PACKET_LENGTH);
-	DoDigest("RIPEMD160", key, 16, packet, PACKET_LENGTH);
-	DoDigest("RIPEMD160", key, 20, packet, PACKET_LENGTH);
-	DoDigest("RIPEMD160", key, 32, packet, PACKET_LENGTH);
+}
 
 	return 0;
 }

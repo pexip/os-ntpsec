@@ -70,6 +70,16 @@ struct ctl_var {
 #define DEF		0x20
 #define	PADDING		0x40
 #define	EOV		0x80
+#define ToMS		0x100
+#define ToPPM		0x200
+#define DBL6		0x400
+#define N_LEAP          0x800   /* Need to read Leap Second info */
+#define N_CLOCK         0x1000  /* Need to read kernel Clock info */
+
+/* Conversions for ntp_adjtime's timex */
+#define KNUToMS         0x10000  /* nano vs old micro */
+#define K_16            0x20000  /* 16 bit scaling */
+#define KUToMS          0x40000  /* always micro */
 
 #define	RO	(CAN_READ)
 #define	RW	(CAN_READ|CAN_WRITE)
@@ -108,7 +118,10 @@ extern  uint64_t sent_count(void);
 extern  uint64_t notsent_count(void);
 extern  uint64_t handler_calls_count(void);
 extern  uint64_t handler_pkts_count(void);
-extern  uptime_t counter_reset_time(void);
+#ifdef REFCLOCK
+extern  uint64_t handler_refrds_count(void);
+#endif
+extern  uptime_t io_timereset;
 
 /* ntp_loopfilter.c */
 extern	void	init_loopfilter(void);
@@ -219,6 +232,7 @@ extern	uptime_t	orphwait;		/* orphan wait time */
 
 /* ntp_util.c */
 extern	void	init_util	(void);
+extern	void 	write_pidfile	(const char *, pid_t);
 extern	void	write_stats	(void);
 extern	void	stats_config	(int, const char *);
 extern	void	record_peer_stats (struct peer *, int);
@@ -431,7 +445,21 @@ extern struct restriction_data rstrct;
 
 #ifdef ENABLE_MSSNTP
 /* ntp_signd.c */
-extern void send_via_ntp_signd(struct recvbuf *, keyid_t, int, void *);
+extern void send_via_ntp_signd(struct recvbuf *, void *);
+
+struct mssntp_counters {
+  uint64_t serves;		/* packets to send_via_ntp_signd */
+  uint64_t serves_no;		/* can't contact samba */
+  uint64_t serves_err;		/* troubles talking to samba */
+  uint64_t serves_good;
+  l_fp     serves_good_wall;
+  l_fp     serves_good_slowest;
+  uint64_t serves_bad;		/* samba said error */
+  l_fp     serves_bad_wall;
+  l_fp     serves_bad_slowest;
+};
+
+extern struct mssntp_counters mssntp_cnt, old_mssntp_cnt;
 #endif
 
 /* ntp_timer.c */

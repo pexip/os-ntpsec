@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: BSD-2-Clause
  *
  * Section references are to
- * https://tools.ietf.org/html/draft-ietf-ntp-using-nts-for-ntp-15
+ * https://tools.ietf.org/html/rfc8915
  *
  * This follows section 6, Suggested Format for NTS Cookies
  * It uses AEAD_AES_SIV_CMAC_256/384/512 from RFC 5297
@@ -100,15 +100,6 @@ int nts_nKeys = 0;
  * If this becomes a bottleneck, we could use a cookie_ctx per thread. */
 pthread_mutex_t cookie_lock = PTHREAD_MUTEX_INITIALIZER;
 AES_SIV_CTX* cookie_ctx;
-
-/* Statistics for ntpq */
-uint64_t nts_cookie_make = 0;
-uint64_t nts_cookie_decode = 0;
-uint64_t nts_cookie_decode_old = 0;	/* one day old */
-uint64_t nts_cookie_decode_old2 = 0;	/* two days old */
-uint64_t nts_cookie_decode_older = 0;	/* more than 2 days old */
-uint64_t nts_cookie_decode_too_old = 0;
-uint64_t nts_cookie_decode_error = 0;
 
 void nts_lock_cookielock(void);
 void nts_unlock_cookielock(void);
@@ -307,7 +298,7 @@ int nts_make_cookie(uint8_t *cookie,
 	if (NULL == cookie_ctx)
 		return 0;		/* We aren't initialized yet. */
 
-	nts_cookie_make++;
+	nts_cnt.cookie_make++;
 
 	INSIST(keylen <= NTS_MAX_KEYLEN);
 
@@ -382,6 +373,11 @@ bool nts_unpack_cookie(uint8_t *cookie, int cookielen,
 	if (NULL == cookie_ctx)
 		return false;	/* We aren't initialized yet. */
 
+	if (0 == nts_nKeys) {
+		nts_cnt.cookie_not_server++;
+		return false;  /* We are not a NTS enabled server. */
+	}
+
 	/* We may get garbage from the net */
 	if (cookielen > NTS_MAX_COOKIELEN)
 		return false;
@@ -394,17 +390,19 @@ bool nts_unpack_cookie(uint8_t *cookie, int cookielen,
 		break;
 	  }
 	}
-	if (0 == i) {
-		nts_cookie_decode++;
-	} else if (nts_nKeys == i) {
-		nts_cookie_decode_too_old++;
+	nts_cnt.cookie_decode_total++;  /* total attempts, includes too old */
+	if (nts_nKeys == i) {
+		nts_cnt.cookie_decode_too_old++;
 		return false;
+        }
+	if (0 == i) {
+		nts_cnt.cookie_decode_current++;
 	} else if (1 == i) {
-		nts_cookie_decode_old++;
+		nts_cnt.cookie_decode_old++;
 	} else if (2 == i) {
-		nts_cookie_decode_old2++;
+		nts_cnt.cookie_decode_old2++;
 	} else {
-		nts_cookie_decode_older++;
+		nts_cnt.cookie_decode_older++;
 	}
 #if 0
 	if (1<i) {
@@ -435,7 +433,7 @@ bool nts_unpack_cookie(uint8_t *cookie, int cookielen,
 	nts_unlock_cookielock();
 
 	if (!ok) {
-		nts_cookie_decode_error++;
+		nts_cnt.cookie_decode_error++;
 		return false;
 	}
 

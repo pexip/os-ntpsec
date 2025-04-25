@@ -457,12 +457,10 @@ set_process_priority(void)
 		msyslog(LOG_ERR, "INIT: set_process_priority: No way found to improve our priority");
 }
 
+const char *ntpd_version_string = "ntpd ntpsec-" NTPSEC_VERSION_EXTENDED;
 const char *ntpd_version(void)
 {
-    static char versionbuf[64];
-    snprintf(versionbuf, sizeof(versionbuf),
-	     "ntpd ntpsec-%s", NTPSEC_VERSION_EXTENDED);
-    return versionbuf;
+    return ntpd_version_string;
 }
 
 /*
@@ -563,6 +561,8 @@ main(
 		}
 		if (rc > 0) {
 			/* parent */
+			if (pidfile)
+				write_pidfile(pidfile, rc);
 			exit_code = wait_child_sync_if(pipe_fds[0],
 						       wait_sync);
 			exit(exit_code);
@@ -588,6 +588,8 @@ main(
 		sa.sa_flags = SA_RESTART;
 		sigaction(SIGDANGER, &sa, NULL);
 #endif	/* SIGDANGER */
+	} else if (pidfile) {
+		write_pidfile(pidfile, getpid());
 	}
 
 	/*
@@ -686,11 +688,7 @@ main(
             case 'm':
             case 'n':
             case 'N':
-                /* handled elsewhere */
-                break;
-	    case 'p':
-		stats_config(STATS_PID_FILE, pidfile);
-		break;
+            case 'p':
             case 'P':
             case 'q':
                 /* handled elsewhere */
@@ -894,7 +892,7 @@ main(
  * If using a log file, there should be enough info in syslog
  * to debug things with minimal extra clutter.
  */
-void announce_starting() {
+void announce_starting(void) {
 	char buf[1024];	/* Secret knowledge of msyslog buf length */
 	char *cp = buf;
 
@@ -1126,7 +1124,7 @@ wait_child_sync_if(
  * With 3 working servers, 2 can outvote a falseticker
  * With 4 servers, you still have 3 if one is down.
  */
-static void check_minsane()
+static void check_minsane(void)
 {
 	struct peer *peer;
 	int servers = 0;

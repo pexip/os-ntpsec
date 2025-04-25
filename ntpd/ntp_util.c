@@ -13,6 +13,7 @@
 #include "ntp_auth.h"
 #include "ntpd.h"
 #include "timespecops.h"
+#include "nts.h"
 
 #include <stdio.h>
 #include <libgen.h>
@@ -63,6 +64,8 @@ static FILEGEN rawstats;
 static FILEGEN refstats;
 static FILEGEN sysstats;
 static FILEGEN usestats;
+static FILEGEN ntsstats;
+static FILEGEN ntskestats;
 
 /*
  * This controls whether stats are written to the fileset. Provided
@@ -80,6 +83,8 @@ static double prev_drift_comp;		/* last frequency update */
  */
 static	void	record_sys_stats(void);
 static	void	record_use_stats(void);
+static	void	record_nts_stats(void);
+static	void	record_ntske_stats(void);
 	void	ntpd_time_stepped(void);
 static  void	check_leap_expiration(bool, time_t);
 
@@ -113,6 +118,8 @@ uninit_util(void)
 	filegen_unregister("peerstats");
 	filegen_unregister("protostats");
 	filegen_unregister("usestats");
+	filegen_unregister("ntsstats");
+	filegen_unregister("ntpkestats");
 }
 #endif /* DEBUG */
 
@@ -131,6 +138,8 @@ init_util(void)
 	filegen_register(statsdir, "peerstats",	  &peerstats);
 	filegen_register(statsdir, "protostats",  &protostats);
 	filegen_register(statsdir, "usestats",	  &usestats);
+	filegen_register(statsdir, "ntsstats",	  &ntsstats);
+	filegen_register(statsdir, "ntskestats",  &ntskestats);
 
 	/*
 	 * register with libntp ntp_set_tod() to call us back
@@ -142,6 +151,24 @@ init_util(void)
 #endif /* DEBUG */
 }
 
+/*
+ * write_pidfile - write the PID file
+ */
+void
+write_pidfile(
+	const char *pidfile,
+	pid_t pid)
+{
+	FILE	*fp;
+
+	if ((fp = fopen(pidfile, "w")) == NULL) {
+		msyslog(LOG_ERR, "LOG: pid file %s: %s",
+		    pidfile, strerror(errno));
+		return;
+	}
+	fprintf(fp, "%ld", (long)pid);
+	fclose(fp);
+}
 
 /*
  * drift_write - write drift to file, speeds up restart
@@ -180,6 +207,8 @@ void
 write_stats(void) {
 	record_sys_stats();
 	record_use_stats();
+	record_nts_stats();
+	record_ntske_stats();
 	if (stats_drift_file != 0) {
 
 		/*
@@ -231,7 +260,6 @@ stats_config(
 	const char *invalue	/* only one type so far */
 	)
 {
-	FILE	*fp;
 	const char *value;
 	size_t	len;
 	double	new_drift = 0;
@@ -298,13 +326,7 @@ stats_config(
 	 * Open pid file.
 	 */
 	case STATS_PID_FILE:
-		if ((fp = fopen(value, "w")) == NULL) {
-			msyslog(LOG_ERR, "LOG: pid file %s: %s",
-			    value, strerror(errno));
-			break;
-		}
-		fprintf(fp, "%d", (int)getpid());
-		fclose(fp);
+		write_pidfile(value, getpid());
 		break;
 
 	/*
@@ -659,8 +681,8 @@ record_sys_stats(void)
 			stat_badauth(), stat_declined(), stat_limitrejected(),
 			stat_kodsent(), stat_version1());
 		fflush(sysstats.fp);
-		proto_clr_stats();
 	}
+	proto_clr_stats();
 }
 
 
@@ -713,6 +735,76 @@ void record_use_stats(void)
 	}
 }
 
+#define nts_since(CNT) ((unsigned long long)(nts_cnt.CNT - old_nts_cnt.CNT))
+uptime_t nts_stattime;
+void record_nts_stats(void) {
+#ifndef DISABLE_NTS
+	struct timespec	now;
+
+	if (!stats_control)
+		return;
+
+	clock_gettime(CLOCK_REALTIME, &now);
+	filegen_setup(&ntsstats, now.tv_sec);
+	if (ntsstats.fp != NULL) {
+		fprintf(ntsstats.fp,
+		    "%s %u %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu\n",
+		    timespec_to_MJDtime(&now), current_time-nts_stattime,
+		    nts_since(client_send),
+		    nts_since(client_recv_good),
+		    nts_since(client_recv_bad),
+		    nts_since(server_send),
+		    nts_since(server_recv_good),
+		    nts_since(server_recv_bad),
+		    nts_since(cookie_make),
+		    nts_since(cookie_not_server),
+		    nts_since(cookie_decode_total),
+		    nts_since(cookie_decode_current),
+		    nts_since(cookie_decode_old),
+		    nts_since(cookie_decode_old2),
+		    nts_since(cookie_decode_older),
+		    nts_since(cookie_decode_too_old),
+		    nts_since(cookie_decode_error) );
+		fflush(ntsstats.fp);
+	}
+	old_nts_cnt = nts_cnt;
+	nts_stattime = current_time;
+#endif
+}
+
+#define ntske_since(CNT) ((unsigned long long)(ntske_cnt.CNT - old_ntske_cnt.CNT))
+#define ntske_since_f(CNT) ((double)lfptod(ntske_cnt.CNT - old_ntske_cnt.CNT))
+uptime_t ntske_stattime;
+void record_ntske_stats(void) {
+#ifndef DISABLE_NTS
+	struct timespec	now;
+
+	if (!stats_control)
+		return;
+
+	clock_gettime(CLOCK_REALTIME, &now);
+	filegen_setup(&ntskestats, now.tv_sec);
+	if (ntsstats.fp != NULL) {
+		fprintf(ntskestats.fp,
+		    "%s %u %llu %.3f %.3f %llu %.3f %.3f %llu %.3f %.3f %llu %llu\n",
+		    timespec_to_MJDtime(&now), current_time-ntske_stattime,
+		    ntske_since(serves_good),
+		    ntske_since_f(serves_good_wall),
+		    ntske_since_f(serves_good_cpu),
+		    ntske_since(serves_nossl),
+		    ntske_since_f(serves_nossl_wall),
+		    ntske_since_f(serves_nossl_cpu),
+		    ntske_since(serves_bad),
+		    ntske_since_f(serves_bad_wall),
+		    ntske_since_f(serves_bad_cpu),
+		    ntske_since(probes_good),
+		    ntske_since(probes_bad) );
+		fflush(ntskestats.fp);
+	}
+	old_ntske_cnt = ntske_cnt;
+	ntske_stattime = current_time;
+#endif
+}
 
 /*
  * record_proto_stats - write system statistics to file

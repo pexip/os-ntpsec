@@ -7,7 +7,9 @@
 
 #include "config.h"
 
+#include <limits.h>
 #include <sys/types.h>
+#include <time.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <string.h>
@@ -28,7 +30,17 @@ static FILE *	syslog_file;
 static char *	syslog_fname;
 static char *	syslog_abs_fname;
 
+#ifdef DEBUG
 int		debug;
+#endif // DEBUG
+
+/* Counters */
+struct log_counters {   /* LOG_EMERG, LOG_ALERT, LOG_CRIT not used */
+  uint64_t errors;      /* LOG_ERR */
+  uint64_t warnings;    /* LOG_WARNING */
+  uint64_t others;      /* LOG_NOTICE, LOG_INFO, and LOG_DEBUG */
+};
+struct log_counters log_cnt;
 
 /* libntp default ntp_syslogmask is all bits lit */
 #define INIT_NTP_SYSLOGMASK	~(uint32_t)0
@@ -184,6 +196,65 @@ msyslog(
 {
 	char	buf[1024];
 	va_list	ap;
+
+	switch (level) {
+		case LOG_ERR:
+			log_cnt.errors++;
+			break;
+		case LOG_WARNING:
+			log_cnt.warnings++;
+			break;
+		case LOG_NOTICE:	/* FALLTHROUGH */
+		case LOG_INFO:		/* FALLTHROUGH */
+		case LOG_DEBUG:
+			log_cnt.others++;
+			break;
+		default:
+			break;
+	}
+
+	va_start(ap, fmt);
+	vsnprintf(buf, sizeof(buf), fmt, ap);
+	va_end(ap);
+	addto_syslog(level, buf);
+}
+
+
+/*
+  Do we log this sundry error?
+*/
+void
+maybe_log(
+	struct do_we_log *maybe,
+	int		level,
+	const char *	fmt,
+	...
+	)
+{
+	struct timespec now;	/* time of current attempted print */
+	char	buf[PIPE_BUF];
+	va_list	ap;
+
+	if (NULL != maybe) {
+		clock_gettime(CLOCK_MONOTONIC, &now);
+		if (0 == maybe->last) {
+			/* first time */
+			maybe->last = now.tv_sec;
+		} else {
+			time_t interval_fp = now.tv_sec - maybe->last;
+			double since_last = ((double)interval_fp)/3600.0;
+			maybe->last = now.tv_sec;
+			maybe->score *= exp(-since_last/maybe->c_decay);
+			if (maybe->c_limit < maybe->score) {
+				return;
+			}
+		}
+		maybe->score += 1.0/maybe->c_decay;  /* only count the ones we print */
+#if (1)  // Do we reject logging attempts when argument 0 is NULL?
+	} else {
+		return;
+#endif
+	}
 
 	va_start(ap, fmt);
 	vsnprintf(buf, sizeof(buf), fmt, ap);
@@ -359,6 +430,17 @@ change_logfile(
 		syslog_abs_fname = abs_fname;
 	}
 	syslogit = false;
+
+	/* This leaves something in the log file if you have errors
+	 * parsing ntp.conf and you switch to a log file.
+	 * Maybe this should happen only during initialization.
+	 *   two places: commmand line and ntp.conf
+	 */ 
+	if (0<log_cnt.errors || 0<log_cnt.warnings) {
+		msyslog(log_cnt.errors? LOG_ERR: LOG_WARNING,
+		"LOG: %lu errors and %lu warnings in previous log file(s)",
+		(unsigned long)log_cnt.errors, (unsigned long)log_cnt.warnings);
+	}
 
 	return 0;
 }
