@@ -1,9 +1,7 @@
-diff --git a/attic/cmac-timing.c b/attic/cmac-timing.c
-index 4f2fd33..eba6ba2 100644
---- a/attic/cmac-timing.c
-+++ b/attic/cmac-timing.c
-@@ -43,9 +43,10 @@ int SAMPLESIZE = 1000000;
- #define PACKET_LENGTH 48
+--- ntpsec.orig/attic/cmac-timing.c
++++ ntpsec/attic/cmac-timing.c
+@@ -45,9 +45,10 @@ int SAMPLESIZE = 1000000;
+ #define MAX_PACKET_LENGTH 4096
  #define MAX_KEY_LENGTH 64
  
 -CMAC_CTX *cmac;
@@ -13,8 +11,8 @@ index 4f2fd33..eba6ba2 100644
 +CMAC_CTX *cmac;
  #endif
  
- unsigned char answer[EVP_MAX_MD_SIZE];
-@@ -55,10 +56,6 @@ static void ssl_init(void)
+ bool do_all = false;
+@@ -59,10 +60,6 @@ static void ssl_init(void)
  #if OPENSSL_VERSION_NUMBER > 0x20000000L
  	EVP_MAC *mac;
  #endif
@@ -25,7 +23,7 @@ index 4f2fd33..eba6ba2 100644
  #if OPENSSL_VERSION_NUMBER > 0x20000000L
  	mac = EVP_MAC_fetch(NULL, "cmac", NULL);
  	if (NULL == mac)
-@@ -66,6 +63,11 @@ static void ssl_init(void)
+@@ -70,6 +67,11 @@ static void ssl_init(void)
  	evp = EVP_MAC_CTX_new(mac);
  	if (NULL == evp)
  		printf("## Oops, EVP_MAC_CTX_new() failed.\n");
@@ -37,7 +35,7 @@ index 4f2fd33..eba6ba2 100644
  #endif
  }
  
-@@ -91,6 +93,7 @@ static void PrintHex(const unsigned char* bytes, int length) {
+@@ -95,6 +97,7 @@ static void PrintHex(const unsigned char
    }
  }
  
@@ -45,7 +43,7 @@ index 4f2fd33..eba6ba2 100644
  static size_t One_CMAC(
    const EVP_CIPHER *cipher, /* cipher algorithm */
    uint8_t *key,             /* key pointer */
-@@ -151,8 +154,9 @@ static void DoCMAC(
+@@ -158,8 +161,9 @@ static void DoCMAC(
  	PrintHex(answer, digestlength);
  	printf("\n");
  }
@@ -54,9 +52,9 @@ index 4f2fd33..eba6ba2 100644
 -#if OPENSSL_VERSION_NUMBER > 0x10101000L
 +#if OPENSSL_VERSION_NUMBER > 0x10101000L && OPENSSL_VERSION_NUMBER < 0x20000000L
  static size_t One_PKEY(
-   EVP_PKEY *pkey,
-   EVP_MD_CTX *ctx,          /* context  */
-@@ -394,7 +398,6 @@ int main(int argc, char *argv[])
+   EVP_MD_CTX *ctx,        /* context  */
+   uint8_t *key,           /* key pointer */
+@@ -577,7 +581,6 @@ if (do_all) {
  #if OPENSSL_VERSION_NUMBER < 0x20000000L
  /* Hangs on 3.0.0  Checking OPENSSL_NO_DES doesn't work. */
  	DoCMAC("DES",          key,  8, packet, PACKET_LENGTH);
@@ -64,52 +62,20 @@ index 4f2fd33..eba6ba2 100644
  	DoCMAC("DES-EDE",      key, 16, packet, PACKET_LENGTH);
  	DoCMAC("DES-EDE3",     key, 24, packet, PACKET_LENGTH);
  #ifndef OPENSSL_NO_SM4
-@@ -409,8 +412,9 @@ int main(int argc, char *argv[])
+@@ -589,9 +592,10 @@ if (do_all) {
  	DoCMAC("ARIA-128",     key, 16, packet, PACKET_LENGTH);
  	DoCMAC("ARIA-192",     key, 24, packet, PACKET_LENGTH);
  	DoCMAC("ARIA-256",     key, 32, packet, PACKET_LENGTH);
 +#endif
+ }
  
 -#if OPENSSL_VERSION_NUMBER > 0x10101000L
 +#if OPENSSL_VERSION_NUMBER > 0x10101000L && OPENSSL_VERSION_NUMBER < 0x20000000L
  	printf("\n");
  	printf("# KL=key length, PL=packet length, CL=CMAC length\n");
- 	printf("# PKEY        KL PL CL  ns/op sec/run\n");
-diff --git a/attic/digest-find.c b/attic/digest-find.c
-index d21ef57..3fed3ed 100644
---- a/attic/digest-find.c
-+++ b/attic/digest-find.c
-@@ -53,8 +53,10 @@ main (
-     const char *versionText = OPENSSL_VERSION_TEXT;
-     printf("OpenSSL xVersion is %x, %s\n", versionNumber, versionText);
- 
-+#if OPENSSL_VERSION_NUMBER < 0x20000000L
-     /* needed if OPENSSL_VERSION_NUMBER < 0x10100000L */
-     OpenSSL_add_all_digests();
-+#endif
- 
- 
-     printf("      name type length\n");
-diff --git a/attic/digest-timing.c b/attic/digest-timing.c
-index b28641a..13ec46b 100644
---- a/attic/digest-timing.c
-+++ b/attic/digest-timing.c
-@@ -66,9 +66,11 @@ SSL_CTX *ssl;
- 
- static void ssl_init(void)
- {
-+#if OPENSSL_VERSION_NUMBER < 0x20000000L
- 	ERR_load_crypto_strings();
- 	OpenSSL_add_all_digests();
- 	OpenSSL_add_all_ciphers();
-+#endif
- 	ctx = EVP_MD_CTX_new();
- #if OPENSSL_VERSION_NUMBER > 0x20000000L
- 	ssl = SSL_CTX_new(TLS_client_method());
-diff --git a/libaes_siv/aes_siv.c b/libaes_siv/aes_siv.c
-index 419694a..f338a01 100644
---- a/libaes_siv/aes_siv.c
-+++ b/libaes_siv/aes_siv.c
+ 	printf("# PKEY        KL   PL CL  ns/op sec/run\n");
+--- ntpsec.orig/libaes_siv/aes_siv.c
++++ ntpsec/libaes_siv/aes_siv.c
 @@ -28,6 +28,9 @@
  #include <openssl/cmac.h>
  #include <openssl/crypto.h>
@@ -134,7 +100,7 @@ index 419694a..f338a01 100644
  };
  
  void AES_SIV_CTX_cleanup(AES_SIV_CTX *ctx) {
-@@ -224,6 +231,7 @@ void AES_SIV_CTX_cleanup(AES_SIV_CTX *ctx) {
+@@ -224,6 +231,7 @@ void AES_SIV_CTX_cleanup(AES_SIV_CTX *ct
          EVP_CIPHER_CTX_cleanup(ctx->cipher_ctx);
  #endif
  
@@ -142,11 +108,10 @@ index 419694a..f338a01 100644
  #if OPENSSL_VERSION_NUMBER >= 0x10100000L && OPENSSL_VERSION_NUMBER <= 0x10100060L
  	/* Workaround for an OpenSSL bug that causes a double free
  	   if you call CMAC_CTX_cleanup() before CMAC_CTX_free().
-@@ -236,6 +244,24 @@ void AES_SIV_CTX_cleanup(AES_SIV_CTX *ctx) {
- #else
+@@ -237,12 +245,31 @@ void AES_SIV_CTX_cleanup(AES_SIV_CTX *ct
          CMAC_CTX_cleanup(ctx->cmac_ctx_init);
          CMAC_CTX_cleanup(ctx->cmac_ctx);
-+#endif
+ #endif
 +#else
 +        if (ctx->mac_ctx_init != NULL) {
 +                EVP_MAC *mac;
@@ -164,10 +129,10 @@ index 419694a..f338a01 100644
 +                ctx->mac_ctx = EVP_MAC_CTX_new(mac);
 +                EVP_MAC_free(mac);
 +        }
- #endif
++#endif
          OPENSSL_cleanse(&ctx->d, sizeof ctx->d);
  }
-@@ -243,6 +269,7 @@ void AES_SIV_CTX_cleanup(AES_SIV_CTX *ctx) {
+ 
  void AES_SIV_CTX_free(AES_SIV_CTX *ctx) {
          if (ctx) {
                  EVP_CIPHER_CTX_free(ctx->cipher_ctx);
@@ -175,7 +140,7 @@ index 419694a..f338a01 100644
                  /* Prior to OpenSSL 1.0.2b, CMAC_CTX_free() crashes on NULL */
                  if (LIKELY(ctx->cmac_ctx_init != NULL)) {
                          CMAC_CTX_free(ctx->cmac_ctx_init);
-@@ -250,24 +277,48 @@ void AES_SIV_CTX_free(AES_SIV_CTX *ctx) {
+@@ -250,24 +277,48 @@ void AES_SIV_CTX_free(AES_SIV_CTX *ctx)
                  if (LIKELY(ctx->cmac_ctx != NULL)) {
                          CMAC_CTX_free(ctx->cmac_ctx);
                  }
@@ -225,7 +190,7 @@ index 419694a..f338a01 100644
                  AES_SIV_CTX_free(ctx);
                  return NULL;
          }
-@@ -281,10 +332,17 @@ int AES_SIV_CTX_copy(AES_SIV_CTX *dst, AES_SIV_CTX const *src) {
+@@ -281,10 +332,17 @@ int AES_SIV_CTX_copy(AES_SIV_CTX *dst, A
                      != 1)) {
                  return 0;
          }
@@ -243,7 +208,7 @@ index 419694a..f338a01 100644
          /* Not necessary to copy cmac_ctx since it's just temporary
           * storage */
          return 1;
-@@ -295,15 +353,26 @@ int AES_SIV_Init(AES_SIV_CTX *ctx, unsigned char const *key, size_t key_len) {
+@@ -295,15 +353,26 @@ int AES_SIV_Init(AES_SIV_CTX *ctx, unsig
                                               0, 0, 0, 0, 0, 0, 0, 0};
          size_t out_len;
          int ret = 0;
@@ -270,7 +235,7 @@ index 419694a..f338a01 100644
                  if (UNLIKELY(EVP_EncryptInit_ex(ctx->cipher_ctx,
                                                  EVP_aes_128_ctr(),
                                                  NULL, key + 16, NULL) != 1)) {
-@@ -311,10 +380,18 @@ int AES_SIV_Init(AES_SIV_CTX *ctx, unsigned char const *key, size_t key_len) {
+@@ -311,10 +380,18 @@ int AES_SIV_Init(AES_SIV_CTX *ctx, unsig
                  }
                  break;
          case 48:
@@ -289,7 +254,7 @@ index 419694a..f338a01 100644
                  if (UNLIKELY(EVP_EncryptInit_ex(ctx->cipher_ctx,
                                                  EVP_aes_192_ctr(),
                                                  NULL, key + 24, NULL) != 1)) {
-@@ -322,10 +399,18 @@ int AES_SIV_Init(AES_SIV_CTX *ctx, unsigned char const *key, size_t key_len) {
+@@ -322,10 +399,18 @@ int AES_SIV_Init(AES_SIV_CTX *ctx, unsig
                  }
                  break;
          case 64:
@@ -308,7 +273,7 @@ index 419694a..f338a01 100644
                  if (UNLIKELY(EVP_EncryptInit_ex(ctx->cipher_ctx,
                                                  EVP_aes_256_ctr(),
                                                  NULL, key + 32, NULL) != 1)) {
-@@ -336,6 +421,7 @@ int AES_SIV_Init(AES_SIV_CTX *ctx, unsigned char const *key, size_t key_len) {
+@@ -336,6 +421,7 @@ int AES_SIV_Init(AES_SIV_CTX *ctx, unsig
                  goto done;
          }
  
@@ -316,7 +281,7 @@ index 419694a..f338a01 100644
          if (UNLIKELY(CMAC_CTX_copy(ctx->cmac_ctx, ctx->cmac_ctx_init) != 1)) {
                  goto done;
          }
-@@ -346,6 +432,18 @@ int AES_SIV_Init(AES_SIV_CTX *ctx, unsigned char const *key, size_t key_len) {
+@@ -346,6 +432,18 @@ int AES_SIV_Init(AES_SIV_CTX *ctx, unsig
          if (UNLIKELY(CMAC_Final(ctx->cmac_ctx, ctx->d.byte, &out_len) != 1)) {
                  goto done;
          }
@@ -335,7 +300,7 @@ index 419694a..f338a01 100644
          debug("CMAC(zero)", ctx->d.byte, out_len);
          ret = 1;
  
-@@ -365,6 +463,7 @@ int AES_SIV_AssociateData(AES_SIV_CTX *ctx, unsigned char const *data,
+@@ -365,6 +463,7 @@ int AES_SIV_AssociateData(AES_SIV_CTX *c
          dbl(&ctx->d);
          debug("double()", ctx->d.byte, 16);
  
@@ -343,7 +308,7 @@ index 419694a..f338a01 100644
          if (UNLIKELY(CMAC_CTX_copy(ctx->cmac_ctx, ctx->cmac_ctx_init) != 1)) {
                  goto done;
          }
-@@ -374,6 +473,18 @@ int AES_SIV_AssociateData(AES_SIV_CTX *ctx, unsigned char const *data,
+@@ -374,6 +473,18 @@ int AES_SIV_AssociateData(AES_SIV_CTX *c
          if (UNLIKELY(CMAC_Final(ctx->cmac_ctx, cmac_out.byte, &out_len) != 1)) {
                  goto done;
          }
@@ -362,7 +327,7 @@ index 419694a..f338a01 100644
          assert(out_len == 16);
          debug("CMAC(ad)", cmac_out.byte, 16);
  
-@@ -391,21 +502,40 @@ static inline int do_s2v_p(AES_SIV_CTX *ctx, block *out,
+@@ -391,21 +502,40 @@ static inline int do_s2v_p(AES_SIV_CTX *
          block t;
          size_t out_len = sizeof out->byte;
  
@@ -403,7 +368,7 @@ index 419694a..f338a01 100644
          } else {
                  size_t i;
                  memcpy(&t, in, len);
-@@ -417,13 +547,25 @@ static inline int do_s2v_p(AES_SIV_CTX *ctx, block *out,
+@@ -417,13 +547,25 @@ static inline int do_s2v_p(AES_SIV_CTX *
                  dbl(&ctx->d);
                  xorblock(&t, &ctx->d);
                  debug("xor", t.byte, 16);
@@ -429,11 +394,9 @@ index 419694a..f338a01 100644
          assert(out_len == 16);
          debug("CMAC(final)", out->byte, 16);
          return 1;
-diff --git a/libntp/authreadkeys.c b/libntp/authreadkeys.c
-index 792e98f..6b45948 100644
---- a/libntp/authreadkeys.c
-+++ b/libntp/authreadkeys.c
-@@ -128,9 +128,12 @@ check_cmac_mac_length(
+--- ntpsec.orig/libntp/authreadkeys.c
++++ ntpsec/libntp/authreadkeys.c
+@@ -178,9 +178,12 @@ check_cmac_mac_length(
  	unsigned char mac[CMAC_MAX_MAC_LENGTH+1024];
  	size_t length = 0;
  	char key[EVP_MAX_KEY_LENGTH];  /* garbage is OK */
@@ -446,7 +409,7 @@ index 792e98f..6b45948 100644
  	ctx = CMAC_CTX_new();
  	if (!CMAC_Init(ctx, key, EVP_CIPHER_key_length(cmac_cipher), cmac_cipher, NULL)) {
  		/* Shouldn't happen. */
-@@ -142,6 +145,15 @@ check_cmac_mac_length(
+@@ -192,6 +195,15 @@ check_cmac_mac_length(
  
  	CMAC_Final(ctx, mac, &length);
  	CMAC_CTX_free(ctx);
@@ -462,127 +425,11 @@ index 792e98f..6b45948 100644
  
  	/* CMAC_MAX_MAC_LENGTH isn't in API
  	 * Check here to avoid buffer overrun in cmac_decrypt and cmac_encrypt
-diff --git a/libntp/macencrypt.c b/libntp/macencrypt.c
-index 0d47774..bfb84d9 100644
---- a/libntp/macencrypt.c
-+++ b/libntp/macencrypt.c
-@@ -10,6 +10,7 @@
- #include <stdbool.h>
- #include <stdint.h>
- 
-+#include <openssl/crypto.h>
- #include <openssl/evp.h>	/* provides OpenSSL digest API */
- #include <openssl/md5.h>
- 
-@@ -26,7 +27,9 @@
- 
- /* Need one per thread. */
- extern EVP_MD_CTX *digest_ctx;
-+#if OPENSSL_VERSION_NUMBER < 0x20000000L
- extern CMAC_CTX *cmac_ctx;
-+#endif
- 
- /*
-  * cmac_encrypt - generate CMAC authenticator
-@@ -42,6 +45,7 @@ cmac_encrypt(
- {
- 	uint8_t	mac[CMAC_MAX_MAC_LENGTH];
- 	size_t	len;
-+#if OPENSSL_VERSION_NUMBER < 0x20000000L
- 	CMAC_CTX *ctx = cmac_ctx;
- 
- 	if (!CMAC_Init(ctx, auth->key, auth->key_size, auth->cipher, NULL)) {
-@@ -53,6 +57,17 @@ cmac_encrypt(
- 	}
- 	CMAC_Update(ctx, (uint8_t *)pkt, (unsigned int)length);
- 	CMAC_Final(ctx, mac, &len);
-+#else
-+	if (EVP_Q_mac(NULL, "cmac", NULL, EVP_CIPHER_get0_name(auth->cipher),
-+		NULL, auth->key, auth->key_size, (uint8_t *)pkt, length,
-+		mac, sizeof mac, &len) == NULL) {
-+		/* Shouldn't happen.  Does if wrong key_size. */
-+		msyslog(LOG_ERR,
-+			"MAC: encrypt: CMAC init failed, %u, %u",
-+			auth->keyid, auth->key_size);
-+		return (0);
-+	}
-+#endif
- 	if (MAX_BARE_MAC_LENGTH < len)
- 		len = MAX_BARE_MAC_LENGTH;
- 	memmove((uint8_t *)pkt + length + 4, mac, len);
-@@ -75,6 +90,7 @@ cmac_decrypt(
- {
- 	uint8_t	mac[CMAC_MAX_MAC_LENGTH];
- 	size_t	len;
-+#if OPENSSL_VERSION_NUMBER < 0x20000000L
- 	CMAC_CTX *ctx = cmac_ctx;
- 
- 	if (!CMAC_Init(ctx, auth->key, auth->key_size, auth->cipher, NULL)) {
-@@ -86,6 +102,17 @@ cmac_decrypt(
- 	}
- 	CMAC_Update(ctx, (uint8_t *)pkt, (unsigned int)length);
- 	CMAC_Final(ctx, mac, &len);
-+#else
-+	if (EVP_Q_mac(NULL, "cmac", NULL, EVP_CIPHER_get0_name(auth->cipher),
-+		NULL, auth->key, auth->key_size, (uint8_t *)pkt, length,
-+		mac, sizeof mac, &len) == NULL) {
-+		/* Shouldn't happen.  Does if wrong key_size. */
-+		msyslog(LOG_ERR,
-+			"MAC: decrypt: CMAC init failed, %u, %u",
-+			auth->keyid, auth->key_size);
-+		return (0);
-+	}
-+#endif
- 	if (MAX_BARE_MAC_LENGTH < len)
- 		len = MAX_BARE_MAC_LENGTH;
- 	if ((unsigned int)size != len + 4) {
-@@ -196,6 +223,10 @@ addr2refid(sockaddr_u *addr)
- {
- 	uint8_t		digest[MD5_DIGEST_LENGTH];
- 	uint32_t	addr_refid;
-+#if OPENSSL_VERSION_NUMBER >= 0x20000000L
-+	OSSL_LIB_CTX	*libctx;
-+	EVP_MD		*md;
-+#endif
- 	EVP_MD_CTX	*ctx;
- 	unsigned int	len;
- 
-@@ -203,11 +234,17 @@ addr2refid(sockaddr_u *addr)
- 		return (NSRCADR(addr));
- 
- 	ctx = EVP_MD_CTX_create();
-+#if OPENSSL_VERSION_NUMBER < 0x20000000L
- #ifdef EVP_MD_CTX_FLAG_NON_FIPS_ALLOW
- 	/* MD5 is not used as a crypto hash here. */
- 	EVP_MD_CTX_set_flags(ctx, EVP_MD_CTX_FLAG_NON_FIPS_ALLOW);
- #endif
- 	if (!EVP_DigestInit_ex(ctx, EVP_md5(), NULL)) {
-+#else
-+	libctx = OSSL_LIB_CTX_new();
-+	md = EVP_MD_fetch(libctx, "MD5", NULL);
-+	if (!EVP_DigestInit_ex(ctx, md, NULL)) {
-+#endif
- 		msyslog(LOG_ERR, "MAC: MD5 init failed");
- 		exit(1);
- 	}
-@@ -216,6 +253,10 @@ addr2refid(sockaddr_u *addr)
- 	    sizeof(struct in6_addr));
- 	EVP_DigestFinal_ex(ctx, digest, &len);
- 	EVP_MD_CTX_destroy(ctx);
-+#if OPENSSL_VERSION_NUMBER >= 0x20000000L
-+	EVP_MD_free(md);
-+	OSSL_LIB_CTX_free(libctx);
-+#endif
- 	memcpy(&addr_refid, digest, sizeof(addr_refid));
- 	return (addr_refid);
- }
-diff --git a/libntp/pymodule-mac.c b/libntp/pymodule-mac.c
-index 7ec5d71..d846608 100644
---- a/libntp/pymodule-mac.c
-+++ b/libntp/pymodule-mac.c
-@@ -35,8 +35,10 @@ static void init_ssl(void) {
- 	if (init_done)
+--- ntpsec.orig/libntp/pymodule-mac.c
++++ ntpsec/libntp/pymodule-mac.c
+@@ -33,8 +33,10 @@ static void init_ssl(void) {
  		return;
+         }
  	init_done = true;
 +#if OPENSSL_VERSION_NUMBER < 0x20000000L
  	OpenSSL_add_all_ciphers();
@@ -591,7 +438,7 @@ index 7ec5d71..d846608 100644
  }
  
  /* xx = ntp.ntpc.checkname(name)
-@@ -88,7 +90,9 @@ void do_mac(char *name,
+@@ -86,7 +88,9 @@ void do_mac(char *name,
  {
  	char upcase[100];
  	static EVP_MD_CTX *digest_ctx = NULL;
@@ -601,57 +448,32 @@ index 7ec5d71..d846608 100644
  	const EVP_MD *digest;
  	const EVP_CIPHER *cipher;
  	size_t cipherlen;
-@@ -140,6 +144,7 @@ void do_mac(char *name,
- 			key[keylen++] = 0;	/* pad with 0s */
- 		key = newkey;
- 	}
+@@ -144,6 +148,8 @@ void do_mac(char *name,
+          * CMAC API is undocumented and deprecated in OpenSSL 3.
+          * See libntp/macencrypt.c
+          */
++
 +#if OPENSSL_VERSION_NUMBER < 0x20000000L
- 	if (NULL == cmac_ctx)
+ 	if (NULL == cmac_ctx) {
  		cmac_ctx = CMAC_CTX_new();
-         if (!CMAC_Init(cmac_ctx, key, keylen, cipher, NULL)) {
-@@ -149,6 +154,14 @@ void do_mac(char *name,
          }
-         CMAC_Update(cmac_ctx, data, (unsigned int)datalen);
-         CMAC_Final(cmac_ctx, mac, maclen);
+@@ -160,6 +166,14 @@ void do_mac(char *name,
+                 *maclen = 0;
+                 return;
+         }
 +#else
-+	if (EVP_Q_mac(NULL, "cmac", NULL, EVP_CIPHER_get0_name(cipher), NULL,
-+	    key, keylen, data, datalen, mac, MAX_MAC_LENGTH, maclen) == NULL) {
++        if (EVP_Q_mac(NULL, "cmac", NULL, EVP_CIPHER_get0_name(cipher), NULL,
++            key, keylen, data, datalen, mac, MAX_MAC_LENGTH, maclen) == NULL) {
 +                /* Shouldn't happen.  Does if wrong key_size. */
-+		*maclen = 0;
-+		return;
-+	}
++                *maclen = 0;
++                return;
++        }
 +#endif
-         if (MAX_MAC_LENGTH < *maclen)
+         if (MAX_MAC_LENGTH < *maclen) {
                  *maclen = MAX_MAC_LENGTH;
- 	return;
-diff --git a/libntp/ssl_init.c b/libntp/ssl_init.c
-index 1a4faf5..05ab84d 100644
---- a/libntp/ssl_init.c
-+++ b/libntp/ssl_init.c
-@@ -24,7 +24,9 @@ static void	atexit_ssl_cleanup(void);
- 
- static bool ssl_init_done;
- EVP_MD_CTX *digest_ctx;
-+#if OPENSSL_VERSION_NUMBER < 0x20000000L
- CMAC_CTX *cmac_ctx;
-+#endif
- 
- void
- ssl_init(void)
-@@ -50,7 +52,9 @@ ssl_init(void)
- 	ntp_RAND_bytes(&dummy, 1);
- 
- 	digest_ctx = EVP_MD_CTX_new();
-+#if OPENSSL_VERSION_NUMBER < 0x20000000L
- 	cmac_ctx = CMAC_CTX_new();
-+#endif
- 	ssl_init_done = true;
- }
- 
-diff --git a/ntpd/ntp_control.c b/ntpd/ntp_control.c
-index 03b82b6..c72607b 100644
---- a/ntpd/ntp_control.c
-+++ b/ntpd/ntp_control.c
+         }
+--- ntpsec.orig/ntpd/ntp_control.c
++++ ntpsec/ntpd/ntp_control.c
 @@ -12,6 +12,7 @@
  #include <arpa/inet.h>
  #include <inttypes.h>
@@ -660,7 +482,7 @@ index 03b82b6..c72607b 100644
  #include <openssl/evp.h>	/* provides OpenSSL digest API */
  
  #include "ntpd.h"
-@@ -2891,6 +2892,10 @@ static uint32_t derive_nonce(
+@@ -2561,6 +2562,10 @@ static uint32_t derive_nonce(
  		uint8_t	digest[EVP_MAX_MD_SIZE];
  		uint32_t extract;
  	}		d;
@@ -671,7 +493,7 @@ index 03b82b6..c72607b 100644
  	EVP_MD_CTX	*ctx;
  	unsigned int	len;
  
-@@ -2901,8 +2906,17 @@ static uint32_t derive_nonce(
+@@ -2571,8 +2576,17 @@ static uint32_t derive_nonce(
  			(long long)next_salt_update);
  	}
  
@@ -689,7 +511,7 @@ index 03b82b6..c72607b 100644
  	EVP_DigestUpdate(ctx, salt, sizeof(salt));
  	EVP_DigestUpdate(ctx, &ts_i, sizeof(ts_i));
  	EVP_DigestUpdate(ctx, &ts_f, sizeof(ts_f));
-@@ -2917,6 +2931,11 @@ static uint32_t derive_nonce(
+@@ -2587,6 +2601,11 @@ static uint32_t derive_nonce(
  	EVP_DigestFinal_ex(ctx, d.digest, &len);
  	EVP_MD_CTX_destroy(ctx);
  
@@ -701,11 +523,9 @@ index 03b82b6..c72607b 100644
  	return d.extract;
  }
  
-diff --git a/ntpd/nts.c b/ntpd/nts.c
-index c42dbbb..a67a782 100644
---- a/ntpd/nts.c
-+++ b/ntpd/nts.c
-@@ -284,7 +284,9 @@ int nts_ssl_write(SSL *ssl, uint8_t *buff, int buff_length) {
+--- ntpsec.orig/ntpd/nts.c
++++ ntpsec/ntpd/nts.c
+@@ -314,7 +314,9 @@ int nts_ssl_write(SSL *ssl, uint8_t *buf
  void nts_log_ssl_error(void) {
  	char buff[256];
  	int err = ERR_get_error();
@@ -715,11 +535,9 @@ index c42dbbb..a67a782 100644
  	while (0 != err) {
  		ERR_error_string_n(err, buff, sizeof(buff));
  		msyslog(LOG_INFO, "NTS: %s", buff);
-diff --git a/ntpd/nts_client.c b/ntpd/nts_client.c
-index 0f174ca..0dbb3e6 100644
---- a/ntpd/nts_client.c
-+++ b/ntpd/nts_client.c
-@@ -412,7 +412,7 @@ void set_hostname(SSL *ssl, const char *hostname) {
+--- ntpsec.orig/ntpd/nts_client.c
++++ ntpsec/ntpd/nts_client.c
+@@ -413,7 +413,7 @@ void set_hostname(SSL *ssl, const char *
  }
  
  bool check_certificate(SSL *ssl, struct peer* peer) {
@@ -728,11 +546,9 @@ index 0f174ca..0dbb3e6 100644
  	X509_NAME *certname;
  	GENERAL_NAMES *gens;
  	char name[200];
-diff --git a/wscript b/wscript
-index 7329d6e..8efd925 100644
---- a/wscript
-+++ b/wscript
-@@ -668,10 +668,12 @@ int main(int argc, char **argv) {
+--- ntpsec.orig/wscript
++++ ntpsec/wscript
+@@ -671,10 +671,12 @@ int main(int argc, char **argv) {
      required_functions = (
          # MacOS doesn't have timer_create ??
          ('timer_create', ["signal.h", "time.h"], "RT", False),
@@ -746,7 +562,7 @@ index 7329d6e..8efd925 100644
  	# Next should be above, but it needs a library
  	# EVP_PKEY_new_CMAC_key added in OpenSSL 1.1.1
          ('EVP_PKEY_new_CMAC_key', ["openssl/cmac.h"], "CRYPTO", False))
-@@ -680,6 +682,9 @@ int main(int argc, char **argv) {
+@@ -683,6 +685,9 @@ int main(int argc, char **argv) {
                         prerequisites=ft[1], use=ft[2],
                         mandatory=ft[3])
  
