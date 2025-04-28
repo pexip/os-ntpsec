@@ -288,6 +288,8 @@ def console_encoding():
 			pass
 		else:
 			if codepage:
+				if 65001==codepage and sys.version_info<(3,3):
+					return'utf-8'
 				return'cp%d'%codepage
 	return sys.stdout.encoding or('cp1252'if is_win32 else'latin-1')
 def split_path_unix(path):
@@ -514,6 +516,16 @@ def lib64():
 			if os.path.exists('/usr/lib64')and not os.path.exists('/usr/lib32'):
 				return'64'
 	return''
+def loose_version(ver_str):
+	lst=re.split(r'([.]|\\d+|[a-zA-Z])',ver_str)
+	ver=[]
+	for i,val in enumerate(lst):
+		try:
+			ver.append(int(val))
+		except ValueError:
+			if val!='.':
+				ver.append(val)
+	return ver
 def sane_path(p):
 	return os.path.abspath(os.path.expanduser(p))
 process_pool=[]

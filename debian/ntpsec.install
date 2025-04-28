@@ -1,7 +1,8 @@
+debian/50-ntpsec.list usr/lib/systemd/ntp-units.d
 debian/ntp-systemd-wrapper usr/libexec/ntpsec
 debian/rotate-stats usr/libexec/ntpsec
-debian/tmp/lib/systemd/system/ntpsec-wait.service
-debian/tmp/lib/systemd/system/ntpsec.service
+debian/tmp/${env:systemdsystemunitdir}/ntpsec-wait.service
+debian/tmp/${env:systemdsystemunitdir}/ntpsec.service
 debian/tmp/usr/bin/ntpleapfetch usr/sbin
 debian/tmp/usr/bin/ntpmon
 debian/tmp/usr/bin/ntpq

@@ -1,0 +1,6 @@
+remove-on-upgrade /etc/apparmor.d/tunables/ntpd
+remove-on-upgrade /etc/apparmor.d/usr.sbin.ntpd
+remove-on-upgrade /etc/cron.daily/ntp
+remove-on-upgrade /etc/dhcp/dhclient-exit-hooks.d/ntp
+remove-on-upgrade /etc/init.d/ntp
+remove-on-upgrade /etc/NetworkManager/dispatcher.d/ntp

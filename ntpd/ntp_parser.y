@@ -166,6 +166,8 @@
 %token	<Integer>	T_Ntpport
 %token	<Integer>	T_NtpSignDsocket
 %token	<Integer>	T_Nts
+%token	<Integer>	T_Ntsstats
+%token	<Integer>	T_Ntskestats
 %token	<Integer>	T_Orphan
 %token	<Integer>	T_Orphanwait
 %token	<Integer>	T_Panic
@@ -208,10 +210,9 @@
 %token	<Integer>	T_Time1
 %token	<Integer>	T_Time2
 %token	<Integer>	T_Timer
-%token	<Integer>	T_Timingstats
 %token	<Integer>	T_Tinker
-%token	<Integer>	T_Tlsciphers
 %token	<Integer>	T_Tlsciphersuites
+%token	<Integer>	T_Tlsecdhcurves
 %token	<Integer>	T_Tos
 %token	<Integer>	T_True
 %token	<Integer>	T_Trustedkey
@@ -654,8 +655,9 @@ stat
 	|	T_Rawstats
 	|	T_Sysstats
 	|	T_Protostats
-	|	T_Timingstats
 	|	T_Usestats
+	|	T_Ntsstats
+	|	T_Ntskestats
 	;
 
 filegen_option_list
@@ -1141,8 +1143,8 @@ nts_string_option_keyword
 	|	T_Cert
 	|	T_Cookie
 	|	T_Key
-	|	T_Tlsciphers
 	|	T_Tlsciphersuites
+	|	T_Tlsecdhcurves
 	|	T_Maxtls
 	|	T_Mintls
 

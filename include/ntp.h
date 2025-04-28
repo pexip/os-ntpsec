@@ -165,15 +165,15 @@ typedef struct netendpt {
  * in Mode 6 ifstats reports.
  */
 #define INT_UP		0x001	/* Interface is up */
-#define	INT_PPP		0x002	/* Point-to-point interface */
+/* #define	INT_PPP		0x002	** Point-to-point interface */
 #define	INT_LOOPBACK	0x004U	/* the loopback interface */
 #define	INT_BROADCAST	0x008	/* can broadcast out this interface */
 /* #define INT_MULTICAST	0x010	** can multicast out this interface */
 #define	INT_BCASTOPEN	0x020U	/* broadcast receive socket is open */
 /* #define INT_MCASTOPEN	0x040	** multicasting enabled */
 #define INT_WILDCARD	0x080	/* wildcard interface - usually skipped */
-#define INT_MCASTIF	0x100	/* bound directly to MCAST address */
-#define INT_PRIVACY	0x200	/* RFC 4941 IPv6 privacy address */
+/* #define INT_MCASTIF	0x100	** bound directly to MCAST address */
+/* #define INT_PRIVACY	0x200	** RFC 4941 IPv6 privacy address */
 /* #define INT_BCASTXMIT	0x400   ** socket setup to allow broadcasts */
 
 /*
@@ -636,8 +636,8 @@ struct mon_data {
 /* #define MDF_BCAST	0x04	** broadcast server (not used) */
 #define	MDF_POOL	0x08	/* pool client solicitor */
 /* #define MDF_ACAST	0x10	** manycast client solicitor (not used) */
-#define	MDF_BCLNT	0x20	/* eph. broadcast/multicast client */
-#define MDF_UCLNT	0x40	/* preemptible manycast or pool client */
+/* #define MDF_BCLNT	0x20	** eph. broadcast/multicast client */
+/* #define MDF_UCLNT	0x40	** preemptible manycast or pool client */
 /*
  * In the context of struct peer in ntpd, one cast_flags bit
  * represent configured associations which never receive packets, and
@@ -670,7 +670,7 @@ typedef struct res_addr6_tag {
 typedef struct restrict_u_tag	restrict_u;
 struct restrict_u_tag {
 	restrict_u *		link;	/* link to next entry */
-	uint32_t		hitcount;	/* number of packets matched */
+	uint64_t		hitcount;	/* number of packets matched */
 	unsigned short		flags;	/* accesslist flags */
 	unsigned short		mflags;	/* match flags */
 	union {				/* variant starting here */
@@ -695,8 +695,6 @@ struct restrict_u_tag {
 #define	RES_VERSION		0x0008	/* version mismatch */
 #define	RES_NOPEERx		0x0010  /* new association denied */
 #define	RES_LIMITED		0x0020	/* packet rate exceeded */
-#define	RES_FLAGS (RES_IGNORE | RES_DONTSERVE | RES_DONTTRUST | \
-			RES_VERSION | RES_LIMITED)
 
 #define	RES_NOQUERY		0x0040	/* mode 6 packet denied */
 #define	RES_NOMODIFY		0x0080	/* mode 6 modify denied */
@@ -708,7 +706,7 @@ struct restrict_u_tag {
 #define	RES_FLAKE		0x1000	/* flakeway - drop 10% */
 #define	RES_NOMRULIST		0x2000	/* mode 6 mrulist denied */
 
-/* RES_DEFAULT defined in resolv.h */
+/* RES_DEFAULT defined in /usr/include/resolv.h */
 #define RES_Default (RES_NOQUERY|RES_LIMITED)
 
 /* pythonize-header: start ignoring */

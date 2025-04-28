@@ -1,0 +1,20 @@
+Description: Downgrade missing stats dir log severity
+ The Debian package does not create /var/log/ntpsec by default.  The admin is
+ directed (by a comment in ntp.conf) to create it if and only if they want
+ logging.  However, upstream ntpsec logs an error message if the log directory
+ does not exist.
+Forwarded: not-needed
+Origin: vendor
+Author: Santiago Vila <sanvila@debian.org>
+Last-Update: 2024-03-10
+--- a/ntpd/ntpd.c
++++ b/ntpd/ntpd.c
+@@ -873,7 +873,7 @@
+ #endif
+ 
+ 	if (access(statsdir, W_OK) != 0) {
+-	    msyslog(LOG_ERR, "statistics directory %s does not exist or is unwriteable, error %s", statsdir, strerror(errno));
++	    msyslog(LOG_WARNING, "statistics directory %s does not exist or is unwriteable, error %s", statsdir, strerror(errno));
+ 	}
+ 
+ 	mainloop();

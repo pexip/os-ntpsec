@@ -237,14 +237,13 @@ Copyright: Akamai Technologies, Inc.
 License: Apache-2.0
  On Debian systems, the complete text of the Apache License version 2.0 can be
  found in file "/usr/share/common-licenses/Apache-2.0".
+Comment: https://github.com/dfoxfranke/libaes_siv
 
 Files: libjsmn/*
 Copyright: Serge Zaitsev <zaitsev.serge@gmail.com>
-Comment: This is currently used.  The plan is to create a standalone package of
-         libjsmn (from the upstream sources).  Then, this package would build
-         against that. Note that several other packages in Debian (including
-         ntp) currently embed libjsmn.  They could also be fixed to use the
-         standalone libjsmn package once it is created.
+Comment: This is currently unused as the gpsd driver is not built.
+         https://github.com/zserge/jsmn
+# SPDX calls this "MIT".
 License: Expat
 
 Files: libntp/emalloc.c
@@ -382,7 +381,9 @@ Copyright: James Grenning
            Mike Karlesky
            Mark VanderVoord
            Greg Williams
+# SPDX calls this "MIT".
 License: Expat
+Comment: https://github.com/ThrowTheSwitch/Unity
 
 Files: waf waflib/*
 Copyright: Thomas Nagy
@@ -958,6 +959,7 @@ License: CC-BY-4.0
  .
  Creative Commons may be contacted at creativecommons.org.
 
+# SPDX calls this "MIT".
 License: Expat
  Permission is hereby granted, free of charge, to any person obtaining
  a copy of this software and associated documentation files (the

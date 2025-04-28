@@ -1,7 +1,13 @@
 /*
  * authreadkeys.c - routines to support the reading of the key file
+ * See comment at top of macencrypt.c
  */
-#define OPENSSL_SUPPRESS_DEPRECATED 1
+
+
+/* FIXME: use Fetch
+ * shift to one ctx per crypto type rather than one per key
+ */
+// #warning "FIXME: fetch. preload"
 
 #include "config.h"
 #include <stdio.h>
@@ -15,8 +21,11 @@
 
 #include <openssl/objects.h>
 #include <openssl/evp.h>
+#include <openssl/err.h>
 
+#if OPENSSL_VERSION_NUMBER < 0x20000000L
 #include <openssl/cmac.h>
+#endif
 
 #define NAMEBUFSIZE 100
 
@@ -82,12 +91,16 @@ try_cmac(const char *upcased, char* namebuf) {
 	if (EVP_get_cipherbyname(namebuf) == NULL) {
 		return NULL;
 	}
+	/* FIXME: 3.0 needs a Fetch to be sure it really exists. */
 	return namebuf;
 }
 
 static char*
 try_digest(char *upcased, char *namebuf) {
 	strlcpy(namebuf, upcased, NAMEBUFSIZE);
+	if (strcmp(namebuf, "SHA-1") == 0) {
+		strlcpy(namebuf, "SHA1", NAMEBUFSIZE);
+	}
 	if (EVP_get_digestbyname(namebuf) != NULL) {
 	  return namebuf;
 	}
@@ -105,22 +118,59 @@ static void
 check_digest_mac_length(
 	keyid_t keyno,
 	char *name) {
-	unsigned char digest[EVP_MAX_MD_SIZE];
 	unsigned int length = 0;
-	EVP_MD_CTX *ctx;
-	const EVP_MD *md;
 
-	md = EVP_get_digestbyname(name);
-	ctx = EVP_MD_CTX_create();
+#if OPENSSL_VERSION_NUMBER > 0x20000000L
+	const EVP_MD *md = EVP_get_digestbyname(name);
+	length = EVP_MD_get_size(md);
+#else
+	const EVP_MD *md = EVP_get_digestbyname(name);
+	EVP_MD_CTX *ctx = EVP_MD_CTX_create();
+	unsigned char digest[EVP_MAX_MD_SIZE];
 	EVP_DigestInit_ex(ctx, md, NULL);
 	EVP_DigestFinal_ex(ctx, digest, &length);
 	EVP_MD_CTX_destroy(ctx);
-
+#endif
 	if (MAX_BARE_MAC_LENGTH < length) {
 		msyslog(LOG_ERR, "AUTH: authreadkeys: digest for key %u, %s will be truncated.", keyno, name);
 	}
 }
 
+#if OPENSSL_VERSION_NUMBER > 0x20000000L
+static void
+check_cmac_mac_length(
+	keyid_t keyno,
+	char *name) {
+	size_t length = 0;
+	EVP_MAC_CTX *ctx = evp_ctx; 
+	OSSL_PARAM params[2];
+
+	params[0] = OSSL_PARAM_construct_utf8_string("cipher", name, 0);
+	params[1] = OSSL_PARAM_construct_end();
+	if (0 == EVP_MAC_CTX_set_params(ctx, params)) {
+		unsigned long err = ERR_get_error();
+		char * str = ERR_error_string(err, NULL);
+		msyslog(LOG_ERR, "EVP_MAC_CTX_set_params() failed: %s: %lu=>%s.\n",
+			str, (unsigned long)keyno, name);
+		exit(1);
+        }
+	length = EVP_MAC_CTX_get_mac_size(ctx);
+
+	/* CMAC_MAX_MAC_LENGTH isn't in the OpenSSL API
+	 * Check here to avoid buffer overrun in cmac_decrypt and cmac_encrypt
+	 */
+	if (CMAC_MAX_MAC_LENGTH < length) {
+		msyslog(LOG_ERR,
+			"AUTH: authreadkeys: CMAC for key %u, %s is too big: %lu",
+			keyno, name, (long unsigned int)length);
+		exit(1);
+	}
+
+	if (MAX_BARE_MAC_LENGTH < length) {
+		msyslog(LOG_ERR, "AUTH: authreadkeys: CMAC for key %u, %s will be truncated.", keyno, name);
+	}
+}
+#else
 static void
 check_cmac_mac_length(
 	keyid_t keyno,
@@ -157,6 +207,7 @@ check_cmac_mac_length(
 		msyslog(LOG_ERR, "AUTH: authreadkeys: CMAC for key %u, %s will be truncated.", keyno, name);
 	}
 }
+#endif
 
 /* check_mac_length - Check for CMAC/digest too long.
  * maybe should check for too short.
@@ -165,7 +216,7 @@ static void
 check_mac_length(
 	keyid_t keyno,
 	AUTH_Type type,
-	char * name,
+	char *name,
 	char *upcased) {
 	switch (type) {
 	    case AUTH_CMAC:
@@ -174,6 +225,7 @@ check_mac_length(
 	    case AUTH_DIGEST:
 		check_digest_mac_length(keyno, name);
 		break;
+	    case AUTH_NONE:
 	    default:
 		msyslog(LOG_ERR, "BUG: authreadkeys: unknown AUTH type for key %u, %s", keyno, upcased);
 	}
@@ -224,6 +276,7 @@ check_key_length(
 	    case AUTH_DIGEST:
 		/* any length key works */
 		break;
+	    case AUTH_NONE:
 	    default:
 		msyslog(LOG_ERR, "BUG: authreadkeys: unknown AUTH type for key %u", keyno);
 	}
@@ -314,6 +367,7 @@ msyslog(LOG_ERR, "AUTH: authreadkeys: reading %s", file);
 		 * EVP_get_digestbyname() or EVP_get_cipherbyname().
 		 *
 		 * AES is short for AES-128.
+		 * SHA-1 is short for SHA1.
 		 * CMAC names get "-CBC" appended.
 		 * ntp classic uses AES128CMAC, so we support that too.
 		 *

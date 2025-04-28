@@ -4,6 +4,7 @@
  */
 #include "config.h"
 
+#include "ntp.h"
 #include "ntpd.h"
 #include "ntp_endian.h"
 #include "ntp_stdlib.h"
@@ -19,6 +20,7 @@
 #endif
 #include <unistd.h>
 
+#define MSSNTP_QUERY_MAC_LEN 16
 
 /*
  * Byte order conversion
@@ -661,6 +663,11 @@ receive(
 	auth_info* auth = NULL;  /* !NULL if authenticated */
 	int mode;
 
+#ifdef ENABLE_MSSNTP
+	uint8_t zero_key[MSSNTP_QUERY_MAC_LEN];
+	memset(&zero_key, 0, MSSNTP_QUERY_MAC_LEN);
+#endif /* ENABLE_MSSNTP */
+
 	stat_proto_total.sys_received++;
 
 #ifdef NTPv1
@@ -754,6 +761,21 @@ receive(
 		return;
 	    }
 	}
+
+#ifdef ENABLE_MSSNTP
+	// If in an MS-SNTP restrict range, with a 16-byte all zero authenticator,
+	if((RES_MSSNTP == (restrict_mask & RES_MSSNTP))
+	    &&(MSSNTP_QUERY_MAC_LEN == rbufp->mac_len)
+	    &&(0 == memcmp(&(rbufp->recv_buffer[LEN_PKT_NOMAC + 4]),
+		                 zero_key, MSSNTP_QUERY_MAC_LEN))
+	) {
+	    // switch off the check that was breaking MS-SNTP;
+	    rbufp->keyid_present = false;
+	} else {
+	    // otherwise, switch off MS-SNTP to not break all other time service.
+	    restrict_mask &= ~RES_MSSNTP;
+	}
+#endif /* ENABLE_MSSNTP */
 
 	if(i_require_authentication(peer, restrict_mask) ||
 	    /* He wants authentication */
@@ -2355,10 +2377,7 @@ fast_xmit(
 
 #ifdef ENABLE_MSSNTP
 	if (flags & RES_MSSNTP) {
-		keyid_t keyid = 0;
-		if (NULL != auth) keyid = auth->keyid;
-		// FIXME need counter
-		send_via_ntp_signd(rbufp, keyid, flags, &xpkt);
+		send_via_ntp_signd(rbufp, &xpkt); // Simplified the API
 		return;
 	}
 #endif /* ENABLE_MSSNTP */
@@ -2370,7 +2389,7 @@ fast_xmit(
          *  3) none
 	 */
 	sendlen = LEN_PKT_NOMAC;
-	clock_gettime(CLOCK_REALTIME, &start);
+	clock_gettime(CLOCK_MONOTONIC, &start);
 	if (rbufp->ntspacket.valid) {
 #ifndef DISABLE_NTS
 	  sendlen += extens_server_send(&rbufp->ntspacket, &xpkt);
@@ -2387,8 +2406,8 @@ fast_xmit(
 	  return;
 	}
 	sendpkt(&rbufp->recv_srcadr, rbufp->dstadr, &xpkt, (int)sendlen);
-	clock_gettime(CLOCK_REALTIME, &finish);
-	sys_authdelay = tspec_to_d(sub_tspec(finish, start));
+	clock_gettime(CLOCK_MONOTONIC, &finish);
+	sys_authdelay = tspec_intv_to_lfp(sub_tspec(finish, start));
 	/* Previous versions of this code had separate DPRINT-s so it
 	 * could print the key on the auth case.  That requires separate
 	 * sendpkt-s on each branch or the DPRINT pollutes the timing. */
@@ -2490,7 +2509,7 @@ dns_take_pool(
 	pctl.mode = 0;
 	pctl.peerkey = 0;
 	peer = newpeer(rmtadr, NULL, lcladr,
-		       MODE_CLIENT, &pctl, MDF_UCAST | MDF_UCLNT, false);
+		       MODE_CLIENT, &pctl, MDF_UCAST, false);
 	peer_xmit(peer);
 	if (peer->cfg.flags & FLAG_IBURST)
 	  peer->retry = NTP_RETRY;
@@ -2611,7 +2630,9 @@ local_refid(
 {
 	endpt *	unicast_ep;
 
-	if (p->dstadr != NULL && !(INT_MCASTIF & p->dstadr->flags))
+// FIXME: Is this ever NULL?  MCAST leftover??
+// (actually, just check)
+	if (p->dstadr != NULL)
 		unicast_ep = p->dstadr;
 	else
 		unicast_ep = findinterface(&p->srcadr);

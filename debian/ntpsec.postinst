@@ -10,9 +10,13 @@ if [ "$1" = "configure" ]; then
 	ln -sf /dev/null /etc/systemd/system/ntpsec.timer
 
 	# This code is duplicated in the ntpsec-ntpviz postinst:
-	addgroup --system --quiet ntpsec
-	adduser --system --quiet --ingroup ntpsec \
-		--no-create-home --home /nonexistent ntpsec
+	if ! getent group ntpsec > /dev/null; then
+		addgroup --system --quiet ntpsec
+	fi
+	if ! getent passwd ntpsec > /dev/null; then
+		adduser --system --quiet --ingroup ntpsec \
+			--no-create-home --home /nonexistent ntpsec
+	fi
 
 	install -o ntpsec -g ntpsec -d /var/lib/ntpsec
 

@@ -5,7 +5,7 @@ Branches
 --------
 
 The branches are named per [DEP-14] with the default packaging branch being
-`debian/unstable` (rather than `debian/master`).
+`debian/unstable` (rather than `debian/latest`).
 
 The `master` branch is upstream's `master` branch.
 
@@ -62,7 +62,7 @@ Switch back to the packaging branch:
 Import the orig tarball, which `uscan` will repack using `debian/repack-waf`:
 
     # uscan must be run separately, instead of using gbp import-orig --uscan,
-    # because gbp needs to use the repacked +dfsg1 tarball instead of the
+    # because gbp needs to use the repacked +dfsg tarball instead of the
     # unmodified tarball downloaded by uscan.
     uscan --download-version 1.1.8
     gbp import-orig --upstream-vcs-tag=NTPsec_1_1_8 \

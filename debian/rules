@@ -6,6 +6,7 @@ include /usr/share/dpkg/pkg-info.mk
 
 export DEB_BUILD_MAINT_OPTIONS = hardening=+bindnow,+pie
 export DEB_CFLAGS_MAINT_APPEND = -fno-strict-aliasing
+export systemdsystemunitdir = $(shell pkg-config --variable=systemdsystemunitdir systemd)
 
 %:
 	dh $@ --with apache2,python3
@@ -49,7 +50,7 @@ endif
 		python3 waf configure \
 		--pyshebang=/usr/bin/python3 \
 		--prefix=/usr --libdir=/usr/lib/$(DEB_HOST_MULTIARCH) \
-		--enable-debug --enable-debug-gdb \
+		--enable-debug \
 		--enable-mssntp --enable-warnings \
 		--refclock=local,spectracom,generic,arbiter,nmea,pps,hpgps,shm,trimble,jjy,zyfer \
 		--enable-doc --htmldir=/usr/share/doc/ntpsec/html
@@ -78,11 +79,11 @@ override_dh_gencontrol:
 override_dh_install:
 	python3 waf install --destdir=$(CURDIR)/debian/tmp
 	mv \
-		debian/tmp/lib/systemd/system/ntpd.service \
-		debian/tmp/lib/systemd/system/ntpsec.service
+		debian/tmp/$(systemdsystemunitdir)/ntpd.service \
+		debian/tmp/$(systemdsystemunitdir)/ntpsec.service
 	mv \
-		debian/tmp/lib/systemd/system/ntp-wait.service \
-		debian/tmp/lib/systemd/system/ntpsec-wait.service
+		debian/tmp/$(systemdsystemunitdir)/ntp-wait.service \
+		debian/tmp/$(systemdsystemunitdir)/ntpsec-wait.service
 	rm -rf debian/tmp/usr/lib/python3/dist-packages/ntp/__pycache__
 	# ntpfrob probes internal, mostly undocumented settings.  It is
 	# extremely unlikely that anyone needs this.
@@ -129,19 +130,19 @@ override_dh_install:
 		debian/ntpsec.certbot \
 		debian/ntpsec/etc/letsencrypt/renewal-hooks/deploy/ntpsec
 
-	install -d debian/ntpsec/lib/systemd/system
+	install -d debian/ntpsec/$(systemdsystemunitdir)
 	install -m 644 \
 		debian/ntpsec.ntpsec-rotate-stats.service \
-		debian/ntpsec/lib/systemd/system/ntpsec-rotate-stats.service
+		debian/ntpsec/$(systemdsystemunitdir)/ntpsec-rotate-stats.service
 	install -m 644 \
 		debian/ntpsec.ntpsec-rotate-stats.timer \
-		debian/ntpsec/lib/systemd/system/ntpsec-rotate-stats.timer
+		debian/ntpsec/$(systemdsystemunitdir)/ntpsec-rotate-stats.timer
 
-	install -d debian/ntpsec-ntpviz/lib/systemd/system
+	install -d debian/ntpsec-ntpviz/$(systemdsystemunitdir)
 	install -m 644 \
 		etc/ntploggps.service \
 		etc/ntploggps.timer \
-		debian/ntpsec-ntpviz/lib/systemd/system/
+		debian/ntpsec-ntpviz/$(systemdsystemunitdir)
 
 	install -d debian/ntpsec-ntpviz/etc/ntpviz/day
 	install -m 644 www/day/footer \
@@ -166,6 +167,18 @@ override_dh_install:
 
 	install -D -m 0755 debian/ntpdate-debian \
 		debian/ntpsec-ntpdate/usr/sbin/ntpdate-debian
+	install -D -m 0644 debian/ntpsec.dhcp \
+		debian/ntpsec/etc/dhcp/dhclient-exit-hooks.d/ntpsec
+	install -D -m 0755 debian/ntpsec.networkmanager \
+		debian/ntpsec/usr/lib/NetworkManager/dispatcher.d/ntpsec
+	install -D -m 0644 debian/ntpsec-ntpdate.dhcp \
+		debian/ntpsec-ntpdate/etc/dhcp/dhclient-exit-hooks.d/ntpsec-ntpdate
+	install -D -m 0755 debian/ntpsec-ntpdate.networkmanager \
+		debian/ntpsec-ntpdate/usr/lib/NetworkManager/dispatcher.d/ntpsec-ntpdate
+	install -D -m 0644 debian/ntpsec-systemd-netif.path \
+		debian/ntpsec/$(systemdsystemunitdir)/ntpsec-systemd-netif.path
+	install -D -m 0644 debian/ntpsec-systemd-netif.service \
+		debian/ntpsec/$(systemdsystemunitdir)/ntpsec-systemd-netif.service
 
 ifeq (yes,$(shell dpkg-vendor --derives-from Ubuntu && echo yes))
 	install -D -m 0644 debian/ntp.conf.ubuntu debian/ntpsec/etc/ntpsec/ntp.conf

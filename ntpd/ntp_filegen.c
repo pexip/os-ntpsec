@@ -133,10 +133,8 @@ filegen_open(
 		break;
 
 	case FILEGEN_PID:
-		gen->id_lo = getpid();
-		gen->id_hi = 0;
 		snprintf(suffix, suflen, "%c#%lld",
-			 SUFFIX_SEP, (long long)gen->id_lo);
+			 SUFFIX_SEP, (long long)getpid());
 		break;
 
 	case FILEGEN_DAY:
@@ -340,16 +338,14 @@ filegen_setup(
 
 	default:
 	case FILEGEN_NONE:
+	case FILEGEN_PID:
 		current = true;
 		break;
 
-	case FILEGEN_PID:
-		current = ((int)gen->id_lo == getpid());
-		break;
-
 	case FILEGEN_AGE:
-		current = (gen->id_lo <= (long)current_time) &&
-			  (gen->id_hi > (long)current_time);
+		/* current_time doesn't go backwards
+		 * so don't need to check id_lo */
+		current = ((unsigned)gen->id_hi > current_time);
 		break;
 
 	case FILEGEN_DAY:

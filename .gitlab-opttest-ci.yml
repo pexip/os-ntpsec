@@ -15,7 +15,7 @@ make-tarball:
 .option_tester: &option_tester
   stage: test
   needs: []
-  after_script:
+  script:
     - PYTHON=python2 bash tests/option-tester.sh
     - PYTHON=python3 bash tests/option-tester.sh
   tags:
@@ -23,55 +23,62 @@ make-tarball:
   rules:
     - if: '$CI_PIPELINE_SOURCE == "schedule"'
 
-alpine-edge-options-tester:
-  <<: *option_tester
-  image: alpine:edge
+.option_tester_py3_only: &option_tester_py3_only
+  stage: test
+  needs: []
   script:
+    - PYTHON=python3 bash tests/option-tester.sh
+  tags:
+    - gitlab-org
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "schedule"'
+
+alpine-edge-options-tester:
+  <<: *option_tester_py3_only
+  image: alpine:edge
+  before_script:
     - apk update && apk add gcc bison musl-dev openssl-dev libcap-dev python3-dev asciidoc libseccomp-dev bash
 
 alpine-options-tester:
-  <<: *option_tester
+  <<: *option_tester_py3_only
   image: alpine
-  script:
+  before_script:
     - apk update && apk add gcc bison musl-dev openssl-dev libcap-dev python3-dev asciidoc libseccomp-dev bash
 
 centos-options-tester:
-  <<: *option_tester
-  image: quay.io/centos/centos:stream8
-  script:
-    - dnf -y --enablerepo=powertools install bison gcc openssl-devel libcap-devel python3-devel python2-devel pps-tools-devel libseccomp-devel bash
+  <<: *option_tester_py3_only
+  image: quay.io/centos/centos:stream9
+  before_script:
+    - dnf -y --enablerepo=crb install bison gcc openssl-devel libcap-devel python3-devel pps-tools-devel libseccomp-devel pkgconf-pkg-config bash
 
 fedora-latest-options-tester:
-  image:
-    name: fedora:latest
-    entrypoint: [ '/bin/bash', '-c', 'ln -snf /bin/bash /bin/sh && /bin/bash -c $0' ]
-  script:
-    - yum -y install bison gcc openssl-devel libcap-devel pps-tools-devel python3-devel python2-devel libseccomp-devel bash
+  image: fedora:latest
+  before_script:
+    - yum -y install bison gcc openssl-devel libcap-devel pps-tools-devel python3-devel python2-devel libseccomp-devel pkgconf-pkg-config bash
   <<: *option_tester
 
 opensuse-leap-options-tester:
-  <<: *option_tester
+  <<: *option_tester_py3_only
   image: opensuse/leap
   allow_failure: true
-  script:
-    - zypper -n install bison gcc libopenssl-devel libcap-devel pps-tools-devel python-devel python-curses libseccomp-devel python3-devel python3-curses bash
+  before_script:
+    - zypper -n install bison gcc libopenssl-devel libcap-devel pps-tools-devel libseccomp-devel python3-devel python3-curses pkg-config bash
 
 gentoo-options-tester:
-  <<: *option_tester
+  <<: *option_tester_py3_only
   image: gentoo/stage3
-  script:
+  before_script:
     - emerge-webrsync
     - emerge -q y sys-libs/libcap sys-devel/bison net-misc/pps-tools app-text/asciidoc sys-libs/libseccomp app-shells/bash
 
 macos-options-tester:
   stage: test
   needs: []
-  image: macos-11-xcode-12
+  image: macos-12-xcode-14
   script:
-    - PKG_CONFIG_PATH=/usr/local/opt/openssl/lib/pkgconfig PYTHON=python2.7 tests/option-tester.sh||true
-    - PKG_CONFIG_PATH=/usr/local/opt/openssl/lib/pkgconfig PYTHON=python3 tests/option-tester.sh
+    - PKG_CONFIG_PATH=${HOMEBREW_PREFIX}/opt/openssl/lib/pkgconfig PYTHON=${HOMEBREW_PREFIX}/bin/python3 tests/option-tester.sh
   tags:
-    - shared-macos-amd64
+    - saas-macos-medium-m1
   rules:
     - if: '$CI_PIPELINE_SOURCE == "schedule" && $CI_COMMIT_BRANCH && $CI_PROJECT_PATH == "NTPsec/ntpsec"'
 
@@ -101,13 +108,25 @@ freebsd-options-tester:
   rules:
     - if: '$CI_PIPELINE_SOURCE == "schedule"'
 
+.deb_option_tester_py3_only: &deb_option_tester_py3_only
+  stage: test
+  needs: []
+  script:
+    - apt-get update
+    - DEBIAN_FRONTEND=noninteractive apt-get install -y netbase bison gcc libssl-dev libcap-dev pps-tools libseccomp-dev bash pkg-config python3-dev python3-minimal
+    - PYTHON=python3 bash tests/option-tester.sh
+  tags:
+    - gitlab-org
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "schedule"'
+
 .deb_old_option_tester: &deb_old_option_tester
   stage: test
   needs: []
   script:
     - apt-get update
-    - apt-get install -y netbase bison gcc libssl-dev libcap-dev pps-tools python-dev python-minimal libseccomp-dev bash pkg-config python3-dev python3-minimal
-    - PYTHON=python bash tests/option-tester.sh
+    - apt-get install -y netbase bison gcc libssl-dev libcap-dev pps-tools python2-dev python2-minimal libseccomp-dev bash pkg-config python3-dev python3-minimal
+    - PYTHON=python2 bash tests/option-tester.sh
     - PYTHON=python3 bash tests/option-tester.sh
   tags:
     - gitlab-org
@@ -116,7 +135,7 @@ freebsd-options-tester:
 
 debian-i386-options-tester:
   image: i386/debian:stable-slim
-  <<: *deb_option_tester
+  <<: *deb_option_tester_py3_only
 
 debian-oldstable-options-tester:
   image: debian:oldstable-slim
@@ -124,28 +143,24 @@ debian-oldstable-options-tester:
 
 debian-stable-options-tester:
   image: debian:stable-slim
-  <<: *deb_option_tester
+  <<: *deb_option_tester_py3_only
 
 debian-testing-options-tester:
   image: debian:testing-slim
-  <<: *deb_option_tester
+  <<: *deb_option_tester_py3_only
 
 debian-unstable-options-tester:
   image: debian:unstable-slim
-  <<: *deb_option_tester
+  <<: *deb_option_tester_py3_only
 
 ubuntu-latest-options-tester:
   image: ubuntu:latest
   <<: *deb_option_tester
 
 ubuntu-devel-options-tester:
-  image:
-    name: ubuntu:devel
-    entrypoint: [ '/bin/sh', '-c', 'ln -snf /bin/bash /bin/sh && /bin/bash -c $0']
-  <<: *deb_option_tester
+  image: ubuntu:devel
+  <<: *deb_option_tester_py3_only
 
 ubuntu-rolling-options-tester:
-  image:
-    name: ubuntu:rolling
-    entrypoint: [ '/bin/sh', '-c', 'ln -snf /bin/bash /bin/sh && /bin/bash -c $0']
-  <<: *deb_option_tester
+  image: ubuntu:rolling
+  <<: *deb_option_tester_py3_only

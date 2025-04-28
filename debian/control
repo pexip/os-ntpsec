@@ -14,18 +14,18 @@ Build-Depends: asciidoctor,
                libcap2-dev [linux-any],
                libssl-dev (>= 3),
                netbase,
-               pkg-config,
+               pkgconf,
                pps-tools [linux-any],
                python3,
                python3-dev,
                python3-gps,
-               systemd,
+               systemd-dev,
                xsltproc,
                xz-utils,
 Build-Conflicts: libavahi-compat-libdnssd-dev,
                  libwww-dev,
                  libwww-ssl-dev,
-Standards-Version: 4.6.2
+Standards-Version: 4.7.0
 Rules-Requires-Root: no
 Vcs-Browser: https://salsa.debian.org/debian/ntpsec
 Vcs-Git: https://salsa.debian.org/debian/ntpsec.git
@@ -36,7 +36,6 @@ Package: ntpsec
 Architecture: any
 Pre-Depends: ${misc:Pre-Depends},
 Depends: adduser,
-         lsb-base,
          netbase,
          python3,
          python3-ntp (= ${binary:Version}),

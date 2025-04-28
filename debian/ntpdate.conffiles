@@ -1,0 +1,3 @@
+remove-on-upgrade /etc/default/ntpdate
+remove-on-upgrade /etc/dhcp/dhclient-exit-hooks.d/ntpdate
+remove-on-upgrade /etc/logcheck/ignore.d.server/ntpdate

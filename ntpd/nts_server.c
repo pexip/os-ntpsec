@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: BSD-2-Clause
  *
  * Section references are to
- * https://tools.ietf.org/html/draft-ietf-ntp-using-nts-for-ntp-15
+ * https://tools.ietf.org/html/rfc8915
  *
  */
 #include "config.h"
@@ -49,12 +49,6 @@ static int listener6_sock = -1;
 /* We need a lock to protect reloading our certificate.
  * This seems like overkill, but it doesn't happen often. */
 pthread_mutex_t certificate_lock = PTHREAD_MUTEX_INITIALIZER;
-
-/* Statistics for ntpq */
-uint64_t nts_ke_serves_good = 0;
-uint64_t nts_ke_serves_bad = 0;
-uint64_t nts_ke_probes_good = 0;
-uint64_t nts_ke_probes_bad = 0;
 
 static int alpn_select_cb(SSL *ssl,
 			  const unsigned char **out,
@@ -110,6 +104,7 @@ bool nts_server_init(void) {
 
 	ok &= nts_load_versions(server_ctx);
 	ok &= nts_load_ciphers(server_ctx);
+	ok &= nts_load_ecdhcurves(server_ctx);
 
 	if (!ok) {
 		msyslog(LOG_ERR, "NTSs: Disabling NTS-KE server");
@@ -190,6 +185,13 @@ void nts_unlock_certlock(void) {
 	}
 }
 
+/* lfptod goes to long double */
+static inline double lfptox(l_fp r) {
+/* l_fp to double */
+        return ldexp((double)((int64_t)r), -32);
+}
+
+
 void* nts_ke_listener(void* arg) {
 	struct timeval timeout = {.tv_sec = NTS_KE_TIMEOUT, .tv_usec = 0};
 	int sock = *(int*)arg;
@@ -197,9 +199,13 @@ void* nts_ke_listener(void* arg) {
 	char addrbuf[100];
 	char usingbuf[100];
 	struct timespec start, finish;		/* wall clock */
+	l_fp wall;
+	bool worked;
+	const char *good;
 #ifdef RUSAGE_THREAD
 	struct timespec start_u, finish_u;	/* CPU user */
 	struct timespec start_s, finish_s;	/* CPU system */
+	l_fp usr, sys;
 	struct rusage usage;
 #endif
 
@@ -232,7 +238,7 @@ void* nts_ke_listener(void* arg) {
 			sleep(1);		/* avoid log clutter on bug */
 			continue;
 		}
-		clock_gettime(CLOCK_REALTIME, &start);
+		clock_gettime(CLOCK_MONOTONIC, &start);
 		sockporttoa_r(&addr, addrbuf, sizeof(addrbuf));
 
 /* This is disabled in order to reduce clutter in the log file.
@@ -258,7 +264,7 @@ void* nts_ke_listener(void* arg) {
 			ntp_strerror_r(errno, errbuf, sizeof(errbuf));
 			msyslog(LOG_ERR, "NTSs: can't setsockopt: %s", errbuf);
 			close(client);
-			nts_ke_serves_bad++;
+			ntske_cnt.serves_bad++;
 			continue;
 		}
 
@@ -269,12 +275,24 @@ void* nts_ke_listener(void* arg) {
 		SSL_set_fd(ssl, client);
 
 		if (SSL_accept(ssl) <= 0) {
-			clock_gettime(CLOCK_REALTIME, &finish);
-			finish = sub_tspec(finish, start);
-			nts_ke_accept_fail(addrbuf, tspec_to_d(finish));
+			clock_gettime(CLOCK_MONOTONIC, &finish);
+			wall = tspec_intv_to_lfp(sub_tspec(finish, start));
+			nts_ke_accept_fail(addrbuf, lfptox(wall));
 			SSL_free(ssl);
 			close(client);
-			nts_ke_serves_bad++;
+			ntske_cnt.serves_nossl++;
+			ntske_cnt.serves_nossl_wall += wall;
+#ifdef RUSAGE_THREAD
+			getrusage(RUSAGE_THREAD, &usage);
+			finish_u = tval_to_tspec(usage.ru_utime);
+			finish_s = tval_to_tspec(usage.ru_stime);
+			usr = tspec_intv_to_lfp(sub_tspec(finish_u, start_u));
+			sys = tspec_intv_to_lfp(sub_tspec(finish_s, start_s));
+			start_u = finish_u;
+			start_s = finish_s;
+			ntske_cnt.serves_nossl_cpu += usr;
+			ntske_cnt.serves_nossl_cpu += sys;
+#endif
 			continue;
 		}
 
@@ -284,32 +302,48 @@ void* nts_ke_listener(void* arg) {
 			SSL_get_cipher_name(ssl),
 			SSL_get_cipher_bits(ssl, NULL));
 
-		if (!nts_ke_request(ssl))
-			nts_ke_serves_bad++;
+		if (nts_ke_request(ssl)) {
+			worked = true;
+			good = "OK";
+		} else {
+			worked = false;
+			good = "Failed";
+		}
 
 		SSL_shutdown(ssl);
 		SSL_free(ssl);
 		close(client);
 
-		clock_gettime(CLOCK_REALTIME, &finish);
-		finish = sub_tspec(finish, start);
+		clock_gettime(CLOCK_MONOTONIC, &finish);
+		wall = tspec_intv_to_lfp(sub_tspec(finish, start));
+		if (worked) {
+			ntske_cnt.serves_good++;
+			ntske_cnt.serves_good_wall += wall;
+		} else {
+			ntske_cnt.serves_bad++;
+			ntske_cnt.serves_bad_wall += wall;
+		}
 #ifdef RUSAGE_THREAD
 		getrusage(RUSAGE_THREAD, &usage);
 		finish_u = tval_to_tspec(usage.ru_utime);
 		finish_s = tval_to_tspec(usage.ru_stime);
-		start_u = sub_tspec(finish_u, start_u);
-		start_s = sub_tspec(finish_s, start_s);
-#endif
-		nts_ke_serves_good++;
-#ifdef RUSAGE_THREAD
-		msyslog(LOG_INFO, "NTSs: NTS-KE from %s, Using %s, took %.3f sec, CPU: %.3f+%.3f ms",
-			addrbuf, usingbuf, tspec_to_d(finish),
-			tspec_to_d(start_u)*1000, tspec_to_d(start_s)*1000);
+		usr = tspec_intv_to_lfp(sub_tspec(finish_u, start_u));
+		sys = tspec_intv_to_lfp(sub_tspec(finish_s, start_s));
 		start_u = finish_u;
 		start_s = finish_s;
+		if (worked) {
+			ntske_cnt.serves_good_cpu += usr;
+			ntske_cnt.serves_good_cpu += sys;
+		} else {
+			ntske_cnt.serves_bad_cpu += usr;
+			ntske_cnt.serves_bad_cpu += sys;
+		}
+		msyslog(LOG_INFO, "NTSs: NTS-KE from %s, %s, Using %s, took %.3f sec, CPU: %.3f+%.3f ms",
+			addrbuf, good, usingbuf, lfptox(wall),
+			lfptox(usr*1000), lfptox(sys*1000));
 #else
-		msyslog(LOG_INFO, "NTSs: NTS-KE from %s, Using %s, took %.3f sec",
-			addrbuf, usingbuf, tspec_to_d(finish));
+		msyslog(LOG_INFO, "NTSs: NTS-KE from %s, %s, Using %s, took %.3f sec",
+			addrbuf, good, usingbuf, lfptox(wall));
 #endif
 	}
 	return NULL;

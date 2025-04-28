@@ -99,6 +99,8 @@ struct key_tok ntp_keywords[] = {
 { "rawstats",		T_Rawstats,		FOLLBY_TOKEN },
 { "sysstats", 		T_Sysstats,		FOLLBY_TOKEN },
 { "usestats",		T_Usestats,		FOLLBY_TOKEN },
+{ "ntsstats",		T_Ntsstats,		FOLLBY_TOKEN },
+{ "ntskestats",		T_Ntskestats,		FOLLBY_TOKEN },
 /* filegen_option */
 { "file",		T_File,			FOLLBY_STRING },
 { "link",		T_Link,			FOLLBY_TOKEN },
@@ -204,6 +206,7 @@ struct key_tok ntp_keywords[] = {
 { "mintls",		T_Mintls,		FOLLBY_TOKEN },
 { "maxtls",		T_Maxtls,		FOLLBY_TOKEN },
 { "tlsciphersuites",	T_Tlsciphersuites,	FOLLBY_STRING },
+{ "tlsecdhcurves",	T_Tlsecdhcurves,	FOLLBY_STRING },
 };
 
 typedef struct big_scan_state_tag {

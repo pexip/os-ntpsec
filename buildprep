@@ -9,9 +9,10 @@
 DRYRUN="no"
 NTPVIZ="no"
 DOC="no"
+UPDATE="no"
 PYVERS=""
 
-OS=`uname -s`
+OS=$(uname -s)
 
 # Loop through option flags
 for optflag in "$@"
@@ -26,6 +27,7 @@ $0 - prepare your system for an NTPsec source build
     -n --dry-run Only show what would be done instead of doing it
        --ntpviz  Install dependencies for ntpviz tool
        --doc     Install dependencies for building documentation
+       --update  Update package repositories
     -a --all     Install all possible dependencies
 EOF
 		exit 0
@@ -43,6 +45,9 @@ EOF
 		NTPVIZ="yes"
 		DOC="yes"
 		;;
+	 --update)
+		UPDATE="yes"
+		;;
 	 *)
 		echo "# WARNING: Unknown argument: $optflag"
 		echo "#"
@@ -54,7 +59,7 @@ done
 # Python 3 equivalents with a python3 prefix.  Compute the correct value for the
 # infix based on system Python.  This eill start to be significant after Python 2
 # EOLs at the beginning of 2020.
-PYVERS=`python --version 2>&1 | sed -n -e '/Python \([0-9]\).*/s//\1/p'`
+PYVERS=$(python --version 2>&1 | sed -n -e '/Python \([0-9]\).*/s//\1/p')
 if [ "$PYVERS" = "2" ]
 then
     PYVERS=""
@@ -73,7 +78,7 @@ EOF
 
 if [ "$DRYRUN" = "yes" ]
 then
-	do=echo
+	do="echo"
 	echo "# Run this without -n|--dry-run, as root, for actual installation."
 	echo "#"
 else
@@ -165,7 +170,7 @@ daemon () {
     case $installer in
 	apk)
 	    $install build-base python                  # basic tools
-	    $install bison python${PYVERS}-dev linux-headers
+	    $install bison "python${PYVERS}-dev" linux-headers
 	    $install openssl-dev libcap-dev libseccomp-dev
 	    # probably needs more, but this builds
 	    # can't find timepps.h: gpsd and chrony have their own ??
@@ -176,6 +181,7 @@ daemon () {
 	    $install libcap-dev libseccomp-dev		# build
 	    $install libavahi-compat-libdnssd-dev	# optional build
 	    $install pps-tools
+	    $install python3-dev python-is-python3
 	    ;;
 	emerge)
 						# Build environment included!
@@ -224,7 +230,7 @@ daemon () {
 	    $install libcap-devel libseccomp-devel 	# build
 	    $install openssl-devel			# build
 	    $install libcap2 openssl-libs
-	    $install python${PYVERS}-curses
+	    $install "python${PYVERS}-curses"
 	    ;;
 	zypper)
 	    $install -t pattern devel_basis		# Build environment
@@ -235,7 +241,7 @@ daemon () {
 	    $install pps-tools-devel			# build
 	    $install pps-tools
 	    $install libcap2 openssl-libs
-	    $install python${PYVERS}-curses
+	    $install "python${PYVERS}-curses"
 	    ;;
     esac
 }
@@ -244,10 +250,10 @@ tools () {
     # Prerequisites for the client Python tools: python extensions
     case $installer in
 	apt)
-	    $install python${PYVERS}-dev
+	    $install "python${PYVERS}-dev"
 	    ;;
 	yum|dnf|yast|zypper)
-	    $install python${PYVERS}-devel
+	    $install "python${PYVERS}-devel"
 	    ;;
     esac
 }
@@ -260,7 +266,7 @@ ntpviz () {
 	    $install ttf-liberation
 	    ;;
 	apt)
-	    distro=`lsb_release -i -s`
+	    distro=$(lsb_release -i -s)
 	    if [ "$distro" = "Ubuntu" ]
 	    then
 		echo "# Looks like an Ubuntu system"
@@ -269,7 +275,7 @@ ntpviz () {
 		echo "# Looks like a generic Debian system"
 		$install gnuplot
 	    fi
-	    $install fonts-liberation python${PYVERS}-psutil
+	    $install fonts-liberation "python${PYVERS}-psutil"
 	    ;;
 	emerge)
 	    $install sci-visualization/gnuplot
@@ -317,6 +323,35 @@ doc () {
 		;;
 	esac
 }
+
+update() {
+	# prerequisites to build documentation
+	case $installer in
+	emerge)
+		$do $installer --sync
+		;;
+	apk|pkg|pkgin|yum)
+		$do $installer update
+		;;
+	dnf)
+		$do $installer distro-sync
+		;;
+	apt)
+		$do $installer-get update
+		;;
+	zypper)
+		$do $installer-get refresh
+		;;
+	esac
+}
+
+if [ "$UPDATE" = "yes" ]
+then
+	update
+else
+	echo ""
+	echo "# Skipping update of package repositories [-u] [--update]"
+fi
 
 # Main sequence
 daemon

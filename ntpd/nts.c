@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: BSD-2-Clause
  *
  * Section references are to
- * https://tools.ietf.org/html/draft-ietf-ntp-using-nts-for-ntp-15
+ * https://tools.ietf.org/html/rfc8915
  *
  * This module exposes mostly functions and structure pointers (not
  * structures) so that the NTS implementation can be sealed off from
@@ -29,11 +29,15 @@
 #include "nts.h"
 #include "nts2.h"
 
+struct nts_counters nts_cnt, old_nts_cnt;
+struct ntske_counters ntske_cnt, old_ntske_cnt;
+
 struct ntsconfig_t ntsconfig = {
 	.ntsenable = false,
 	.mintls = NULL,
 	.maxtls = NULL,
 	.tlsciphersuites = NULL,
+	.tlsecdhcurves = NULL,
 	.cert = NULL,
 	.key = NULL,
 	.KI = NULL,
@@ -178,14 +182,43 @@ bool nts_load_ciphers(SSL_CTX *ctx) {
 	 * There is no SSL_CTX_get_cipher_list, so we can't easily read back
 	 * the ciphers to see what it took.
 	 * We could make a dummy SSL, read the list, then free it.
+	 * man SSL_CTX_set_ciphersuites() has info.
 	 */
-	if (NULL != ntsconfig.tlsciphersuites) {
-		if (1 != SSL_CTX_set_ciphersuites(ctx, ntsconfig.tlsciphersuites)) {
-			msyslog(LOG_ERR, "NTS: troubles setting ciphersuites.");
+	if (NULL == ntsconfig.tlsciphersuites) {
+		return true;
+	}
+	/* The server picks the ciphers.
+	 *  Default is client preference.
+	 *  This switches to server preference if the admin
+	 *  specifies the valid ciphers.  See #797
+	 */
+	SSL_CTX_set_options(ctx, SSL_OP_CIPHER_SERVER_PREFERENCE);
+	if (1 != SSL_CTX_set_ciphersuites(ctx, ntsconfig.tlsciphersuites)) {
+		msyslog(LOG_ERR, "NTS: troubles setting ciphersuites.");
+		return false;
+	} else {
+		msyslog(LOG_INFO, "NTS: set ciphersuites %s.", ntsconfig.tlsciphersuites);
+	}
+	return true;
+}
+
+bool nts_load_ecdhcurves(SSL_CTX *ctx) {
+	/* SSL_CTX_set1_groups_list ignores typos or curves it doesn't support.
+	 * There is no SSL_CTX_get_groups_list, so we can't easily read back
+	 * the ecdhcurves to see what it took.
+	 * We could make a dummy SSL, read the list, then free it.
+	 */
+	if (NULL != ntsconfig.tlsecdhcurves) {
+		/* FIXME -- const bug in OpenSSL */
+		char *copy = estrdup(ntsconfig.tlsecdhcurves);
+		if (1 != SSL_CTX_set1_groups_list(ctx, copy)) {
+			msyslog(LOG_ERR, "NTS: troubles setting ecdhcurves.");
+			free(copy);
 			return false;
 		} else {
-			msyslog(LOG_INFO, "NTS: set ciphersuites.");
+			msyslog(LOG_INFO, "NTS: set ecdhcurves %s.", ntsconfig.tlsecdhcurves);
 		}
+		free(copy);
 	}
 	return true;
 }
@@ -281,6 +314,7 @@ int nts_ssl_write(SSL *ssl, uint8_t *buff, int buff_length) {
 	return bytes_written;
 }
 
+/* Each thread has it's own queue of errors */
 void nts_log_ssl_error(void) {
 	char buff[256];
 	int err = ERR_get_error();

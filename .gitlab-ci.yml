@@ -1,8 +1,6 @@
 pages:
   stage: build
   image: $CI_REGISTRY/ntpsec/ntpsec/alpine-pages
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "schedule"'
   script:
     - python3 ./waf configure --prefix=/tmp/docbot-local --htmldir=`pwd`/public/latest/ --enable-doc --disable-manpage build install
     - cp www/favicon.ico public
@@ -21,7 +19,6 @@ pages:
 include:
   - template: Code-Quality.gitlab-ci.yml
   - template: SAST.gitlab-ci.yml
-  - template: License-Scanning.gitlab-ci.yml
   - local: '.gitlab-opttest-ci.yml'
   - local: '.gitlab-docker-ci.yml'
 
@@ -66,9 +63,7 @@ alpine-edge-refclocks:
 
 AsciiDoc-3-Fedora:
   <<: *job_definition_allow_failure
-  image:
-    name: fedora
-    entrypoint: [ '/bin/bash', '-c' ]
+  image: fedora
   script:
     - yum -y install bison gcc openssl-devel libcap-devel pps-tools-devel python3-devel wget libxslt docbook-style-xsl
     - mkdir asciidoc3
@@ -106,7 +101,7 @@ AsciiDoc-classic2-Debian-Old:
   image: $CI_REGISTRY/ntpsec/ntpsec/debian-oldstable
   script:
     - apt-get update
-    - DEBIAN_FRONTEND="noninteractive" apt-get install -y python2.7-dev asciidoc-base
+    - DEBIAN_FRONTEND="noninteractive" apt-get install -y python2-dev asciidoc-base
     - python2 ./waf configure --enable-doc --enable-manpage build --disable-nts
 
 debian-oldstable-basic:
@@ -181,9 +176,7 @@ ubuntu-latest-refclocks:
 
 ubuntu-devel-basic:
   <<: *job_definition_allow_failure
-  image:
-    name: $CI_REGISTRY/ntpsec/ntpsec/ubuntu-devel
-    entrypoint: [ '/bin/bash', '-c', 'ln -snf /bin/bash /bin/sh && /bin/bash -c $0' ]
+  image: $CI_REGISTRY/ntpsec/ntpsec/ubuntu-devel
   script:
     - python3 ./waf configure --disable-doc --disable-manpage build --pyshebang "/usr/bin/env python3"
     - python3 ./waf install
@@ -191,9 +184,7 @@ ubuntu-devel-basic:
 
 ubuntu-devel-refclocks:
   <<: *job_definition_allow_failure
-  image:
-    name: $CI_REGISTRY/ntpsec/ntpsec/ubuntu-devel
-    entrypoint: [ '/bin/bash', '-c', 'ln -snf /bin/bash /bin/sh && /bin/bash -c $0' ]
+  image: $CI_REGISTRY/ntpsec/ntpsec/ubuntu-devel
   script:
     - python3 ./waf configure --disable-doc --disable-manpage --refclock=all build
 
@@ -249,9 +240,7 @@ centos-latest-refclocks:
 
 fedora-latest-basic:
   <<: *job_definition
-  image:
-    name: $CI_REGISTRY/ntpsec/ntpsec/fedora-latest
-    entrypoint: [ '/bin/bash', '-c' ]
+  image: $CI_REGISTRY/ntpsec/ntpsec/fedora-latest
   script:
     - python3 ./waf configure --disable-doc --disable-manpage build --pyshebang "/usr/bin/env python3"
     - python3 ./waf install
@@ -259,9 +248,7 @@ fedora-latest-basic:
 
 fedora-latest-refclocks:
   <<: *job_definition
-  image:
-    name: $CI_REGISTRY/ntpsec/ntpsec/fedora-latest
-    entrypoint: [ '/bin/bash', '-c' ]
+  image: $CI_REGISTRY/ntpsec/ntpsec/fedora-latest
   script:
     - python3 ./waf configure --disable-doc --disable-manpage --refclock=all build
 
@@ -274,10 +261,10 @@ python3:
 python-coverage:
   <<: *job_definition
   script:
-    - apt-get update -qq && apt-get install -y -qq netbase bison python-dev python-coverage
+    - apt-get update -qq && apt-get install -y -qq netbase bison python-dev-is-python3 python3-coverage
     - python ./waf configure --disable-doc --disable-manpage build
-    - for i in build/main/tests/pylib/test_*; do python-coverage run -a --source build/main/pylib "$i"; done
-    - python-coverage report
+    - for i in build/main/tests/pylib/test_*; do python3-coverage run -a --source build/main/pylib "$i"; done
+    - python3-coverage report
 
 clang-basic:
   <<: *job_definition
@@ -323,13 +310,13 @@ debian-stable-mDNS-basic:
   <<: *job_definition
   image: $CI_REGISTRY/ntpsec/ntpsec/debian-stable-mdns
   script:
-    - python ./waf configure --disable-doc --disable-manpage build
+    - python3 ./waf configure --disable-doc --disable-manpage build
 
 debian-stable-mDNS-refclocks:
   <<: *job_definition
   image: $CI_REGISTRY/ntpsec/ntpsec/debian-stable-mdns
   script:
-    - python ./waf configure --disable-doc --disable-manpage --refclock=all build
+    - python3 ./waf configure --disable-doc --disable-manpage --refclock=all build
 
 cross-build:
   <<: *job_definition_allow_failure
@@ -344,8 +331,9 @@ cross-armhf-build:
   <<: *job_definition_allow_failure
   image: $CI_REGISTRY/ntpsec/ntpsec/cross-armhf
   script:
-    - PYTHON_VERSION=3.9 PYTAG=cpython39 pyext_PATTERN="%s.so" PYTHON_LDFLAGS='-lpthread -ldl' ./waf configure --disable-doc --disable-manpage --disable-nts --cross-compiler=arm-linux-gnueabihf-gcc --cross-cflags '-I/usr/include/ -I/usr/include/python3.9' --cross-ldflags '-L/usr/libhf' --pythondir=/usr/libhf/python3.9/dist-packages --pythonarchdir=/usr/libhf/python3.9/dist-packages build -pp --enable-pylib=ffi
-    - PYTHON_VERSION=3.9 PYTAG=cpython39 pyext_PATTERN="%s.so" PYTHON_LDFLAGS='-lpthread -ldl' ./waf configure --disable-doc --disable-manpage --disable-nts --cross-compiler=arm-linux-gnueabihf-gcc --cross-cflags '-I/usr/include/ -I/usr/include/python3.9' --cross-ldflags '-L/usr/libhf' --pythondir=/usr/libhf/python3.9/dist-packages --pythonarchdir=/usr/libhf/python3.9/dist-packages build -pp --enable-pylib=ext
+    - pyver=$(python3 -c 'import sys;print(f"{sys.version_info.major}.{sys.version_info.minor}")')
+    - PYTHON_VERSION=${pyver} PYTAG=cpython3 pyext_PATTERN="%s.so" PYTHON_LDFLAGS='-lpthread -ldl' ./waf configure --disable-doc --disable-manpage --disable-nts --cross-compiler=arm-linux-gnueabihf-gcc --cross-cflags "-I/usr/include/ -I/usr/include/python${pyver}" --cross-ldflags '-L/usr/libhf' --pythondir=/usr/libhf/python${pyver}/dist-packages --pythonarchdir=/usr/libhf/python${pyver}/dist-packages build --enable-pylib=ffi
+    - PYTHON_VERSION=${pyver} PYTAG=cpython3 pyext_PATTERN="%s.so" PYTHON_LDFLAGS='-lpthread -ldl' ./waf configure --disable-doc --disable-manpage --disable-nts --cross-compiler=arm-linux-gnueabihf-gcc --cross-cflags "-I/usr/include/ -I/usr/include/python${pyver}" --cross-ldflags '-L/usr/libhf' --pythondir=/usr/libhf/python${pyver}/dist-packages --pythonarchdir=/usr/libhf/python${pyver}/dist-packages build --enable-pylib=ext
   tags:
 
 gentoo-basic:
@@ -378,31 +366,31 @@ coverity-scan:
   tags:
     - gitlab-org
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "schedule" && $CI_COMMIT_BRANCH && $CI_PROJECT_PATH == "NTPsec/ntpsec"'
+    - if: '$CI_COMMIT_BRANCH && $CI_PROJECT_PATH == "NTPsec/ntpsec"'
 
 macos-basic:
   <<: *job_definition
-  image: macos-11-xcode-12
+  image: macos-12-xcode-14
   script:
-    - PKG_CONFIG_PATH=/usr/local/opt/openssl/lib/pkgconfig python ./waf configure --disable-doc --disable-manpage build --pyshebang "/usr/bin/env python3"
+    - PKG_CONFIG_PATH=${HOMEBREW_PREFIX}/opt/openssl/lib/pkgconfig python ./waf configure --disable-doc --disable-manpage build --pyshebang "/usr/bin/env python3"
     - DESTDIR=build/prison python ./waf install
     - DESTDIR=./prison python ./waf install
     - DESTDIR=../prison python ./waf install
-    - python ./waf install
-    - python ./waf uninstall
+    - sudo python ./waf install
+    - sudo python ./waf uninstall
     - rm -rvf build/prison ./prison ../prison
   tags:
-    - shared-macos-amd64
+    - saas-macos-medium-m1
   rules:
     - if: '$CI_COMMIT_BRANCH && $CI_PROJECT_PATH == "NTPsec/ntpsec"'
 
 macos-refclocks:
   <<: *job_definition
-  image: macos-11-xcode-12
+  image: macos-12-xcode-14
   script:
-    - PKG_CONFIG_PATH=/usr/local/opt/openssl/lib/pkgconfig python ./waf configure --disable-doc --disable-manpage --refclock=all build
+    - PKG_CONFIG_PATH=${HOMEBREW_PREFIX}/opt/openssl/lib/pkgconfig python ./waf configure --disable-doc --disable-manpage --refclock=all build || cat build/config.log
   tags:
-    - shared-macos-amd64
+    - saas-macos-medium-m1
   rules:
     - if: '$CI_COMMIT_BRANCH && $CI_PROJECT_PATH == "NTPsec/ntpsec"'
 
@@ -424,11 +412,11 @@ feature-debug:
   script:
     - python3 ./waf configure --disable-doc --disable-manpage --refclock=all --enable-debug build
 
-feature-debug-gdb:
+feature-disable-debug-gdb:
   <<: *job_definition
   image: $CI_REGISTRY/ntpsec/ntpsec/alpine
   script:
-    - python3 ./waf configure --disable-doc --disable-manpage --refclock=all --enable-debug-gdb build
+    - python3 ./waf configure --disable-doc --disable-manpage --refclock=all --disable-debug-gdb build
 
 feature-debug-timing:
   <<: *job_definition
