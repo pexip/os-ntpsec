@@ -48,6 +48,8 @@ endif
 	LDFLAGS='' \
 	LINKFLAGS='$(LDFLAGS)' \
 		python3 waf configure \
+		--pythonarchdir=/usr/lib/python3/dist-packages \
+		--pythondir=/usr/lib/python3/dist-packages \
 		--pyshebang=/usr/bin/python3 \
 		--prefix=/usr --libdir=/usr/lib/$(DEB_HOST_MULTIARCH) \
 		--enable-debug \
@@ -68,13 +70,6 @@ override_dh_auto_clean:
 		.waf* \
 		wafhelpers/autorevision.sh
 	find -name "*.pyc" -delete
-
-override_dh_gencontrol:
-	dh_gencontrol -pntp     -- -v1:4.2.8p15+dfsg-2~$(DEB_VERSION_UPSTREAM_REVISION)
-	dh_gencontrol -pntp-doc -- -v1:4.2.8p15+dfsg-2~$(DEB_VERSION_UPSTREAM_REVISION)
-	dh_gencontrol -pntpdate -- -v1:4.2.8p15+dfsg-2~$(DEB_VERSION_UPSTREAM_REVISION)
-	dh_gencontrol -psntp    -- -v1:4.2.8p15+dfsg-2~$(DEB_VERSION_UPSTREAM_REVISION)
-	dh_gencontrol --remaining-packages
 
 override_dh_install:
 	python3 waf install --destdir=$(CURDIR)/debian/tmp

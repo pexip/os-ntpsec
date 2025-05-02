@@ -14,7 +14,6 @@ installinit_error() {
 #DEBHELPER#
 
 if [ "$1" = "purge" ]; then
-	rm -f /etc/systemd/system/ntpsec.timer
 	rm -rf /var/lib/ntpsec/ntp.drift /var/log/ntpsec
 	rmdir /var/lib/ntpsec 2> /dev/null || true
 	if ! LANG=C dpkg -s ntpsec-ntpviz 2> /dev/null | \

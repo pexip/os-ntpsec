@@ -93,9 +93,9 @@ keyfile. The default is /etc/ntpsec/ntp.keys. This file should be in
 the format described in ntpd.
 .TP
 .BI \-o \ version
-Specify the NTP version for outgoing packets as the integer version, which
-can be 1, 2, 3 or 4. The default is 4. This allows ntpdate to be used with
-older NTP versions.
+No longer supported. Used to be for specifying the NTP version on outgoing
+packets as integer in the range from 1 through 4. Now simply ignored with
+a warning message.
 .TP
 .B \-q
 Query only \(en don't set the clock.

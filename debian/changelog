@@ -1,3 +1,53 @@
+ntpsec (1.2.3+dfsg1-8) unstable; urgency=medium
+
+  * Set STA_UNSYNC on start (Closes: 1103964)
+
+ -- Richard Laager <rlaager@debian.org>  Fri, 02 May 2025 16:17:48 -0500
+
+ntpsec (1.2.3+dfsg1-7) unstable; urgency=medium
+
+  * Disable libaes-siv test_malloc_failure (Closes: 1102745)
+
+ -- Richard Laager <rlaager@debian.org>  Mon, 14 Apr 2025 23:52:49 -0500
+
+ntpsec (1.2.3+dfsg1-6) unstable; urgency=medium
+
+  * Specify PYTHONDIR/PYTHONARCHDIR at waf configure (Closes: 1102962)
+
+ -- Richard Laager <rlaager@debian.org>  Mon, 14 Apr 2025 03:26:53 -0500
+
+ntpsec (1.2.3+dfsg1-5) unstable; urgency=medium
+
+  * Backport more armhf fixes (Closes: 1091303)
+  * Stop running with real-time priority (Closes: 1086000)
+
+ -- Richard Laager <rlaager@debian.org>  Tue, 08 Apr 2025 00:54:46 +0000
+
+ntpsec (1.2.3+dfsg1-4) unstable; urgency=low
+
+  [ Richard Laager ]
+  * ntplogtemp: Handle OSError.
+    Thanks to Daniel <daniel@developerdan.com> (Closes: 1098368)
+  * Fix ntpviz cron errors (when uninstalled) (Closes: 1098796)
+  * Add more checks to ntpviz cron
+  * Remove ntpsec.timer systemd-cron workaround (Closes: 1098745)
+  * Add patch to fix out of bounds read.
+    Thanks to Artem Nasonov
+  * Handle BrokenPipeError in ntpq (Closes: 1092198)
+  * Depend on python3-setuptools (Closes: 1080689)
+
+  [ Joachim Kross ]
+  * Docs: ntpdate no longer supports "-o"
+  * ntp.conf: Specific paths for NTS certificate/key
+  * Leverage ntpd's hourly leap-seconds.list file check & auto reload
+
+  [ Richard Laager ]
+  * Update leap-seconds.list URL (Closes: 1089713)
+  * Backport armhf fixes (Closes: 1091303)
+  * Drop transitional packages (Closes: 1072973)
+
+ -- Richard Laager <rlaager@debian.org>  Sat, 01 Mar 2025 00:39:28 -0600
+
 ntpsec (1.2.3+dfsg1-3) unstable; urgency=low
 
   [ Joachim Kross ]
