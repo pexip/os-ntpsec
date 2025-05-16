@@ -1,0 +1,26 @@
+From 11d582aececb1698131257d892b1f81a82504041 Mon Sep 17 00:00:00 2001
+From: Richard Laager <rlaager@wiktel.com>
+Date: Fri, 28 Feb 2025 22:54:39 -0600
+Subject: [PATCH] ntpq: Handle BrokenPipeError
+
+Closes #821
+
+See also: https://bugs.debian.org/1092198
+---
+ ntpclients/ntpq.py | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+--- a/ntpclients/ntpq.py
++++ b/ntpclients/ntpq.py
+@@ -1923,6 +1923,11 @@
+                         interpreter.onecmd(interpreter.precmd(command))
+                     session.close()
+         raise SystemExit(0)
++    except BrokenPipeError:
++        # https://docs.python.org/3/library/signal.html#note-on-sigpipe
++        devnull = os.open(os.devnull, os.O_WRONLY)
++        os.dup2(devnull, sys.stdout.fileno())
++        raise SystemExit(1)
+     except (KeyboardInterrupt, EOFError):
+         if os.isatty(0):
+             interpreter.say("\n")

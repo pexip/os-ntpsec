@@ -1,0 +1,24 @@
+From dc3f42548c94b93db69286b568188b4b6aa410e1 Mon Sep 17 00:00:00 2001
+From: Hal Murray <halmurray@sonic.net>
+Date: Thu, 30 Jan 2025 19:14:13 -0800
+Subject: [PATCH 2/4] Add struct timespec to sizeof list
+
+Mostly for documentation
+---
+ wscript | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/wscript
++++ b/wscript
+@@ -614,8 +614,10 @@
+             mandatory=False,
+         )
+ 
+-    # mostly used by timetoa.h and timespecops.h
++    # mostly used by timespecops.h
++    # Also handy for discovering what a system is doing
+     sizeofs = [
++        ("time.h",      "struct timespec"),
+         ("time.h",      "time_t"),
+         (None,          "long"),
+     ]

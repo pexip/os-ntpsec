@@ -1,0 +1,25 @@
+From 7c13df80c896cc201afd6aa9c758fc3103fad818 Mon Sep 17 00:00:00 2001
+From: Hal Murray <halmurray@sonic.net>
+Date: Sun, 3 Nov 2024 13:04:58 -0800
+Subject: [PATCH 2/2] Fix URL used by ntpleapfetch
+
+---
+ ntpclients/ntpleapfetch | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/ntpclients/ntpleapfetch b/ntpclients/ntpleapfetch
+index bcae167ec..67a3dde1a 100755
+--- a/ntpclients/ntpleapfetch
++++ b/ntpclients/ntpleapfetch
+@@ -21,7 +21,7 @@
+ # ########## Default configuration ##########
+ #
+ # Where to get the file
+-LEAPSRC="https://data.iana.org/time-zones/data/leap-seconds.list"
++LEAPSRC="https://data.iana.org/time-zones/tzdb/leap-seconds.list"
+ 
+ # How many times to try to download new file
+ MAXTRIES=6
+-- 
+2.47.2
+

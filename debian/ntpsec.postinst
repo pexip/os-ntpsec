@@ -4,10 +4,10 @@ set -e
 
 if [ "$1" = "configure" ]; then
 
-	# Mask ntpsec.timer.  This unit does not exist, but masking it will
-	# cause systemd-cron to skip converting /etc/cron.d/ntpsec.  This
-	# package provides equivalent systemd units directly.
-	ln -sf /dev/null /etc/systemd/system/ntpsec.timer
+	# This was a symlink to /dev/null for systemd-cron to skip converting
+	# /etc/cron.d/ntpsec.  This has been special-cased in systemd-cron.
+	# This can be removed after trixie.
+	rm -f /etc/systemd/system/ntpsec.timer
 
 	# This code is duplicated in the ntpsec-ntpviz postinst:
 	if ! getent group ntpsec > /dev/null; then
@@ -118,12 +118,6 @@ fi
 dpkg-maintscript-helper mv_conffile /etc/default/ntp /etc/default/ntpsec 1.1.0\+dfsg1-2\~ ntpsec -- "$@"
 dpkg-maintscript-helper mv_conffile /etc/init.d/ntp /etc/init.d/ntpsec 1.1.0\+dfsg1-2\~ ntpsec -- "$@"
 dpkg-maintscript-helper mv_conffile /etc/ntp.conf /etc/ntpsec/ntp.conf 1.1.0\+dfsg1-2\~ ntpsec -- "$@"
-
-if [ "$1" = "triggered" ]; then
-	# The default configuration uses a leapfile from tzdata, so
-	# we need to restart on changes.
-	invoke-rc.d ntpsec try-restart || true
-fi
 
 installinit_error() {
 	exit $?

@@ -2,13 +2,13 @@ Source: ntpsec
 Section: net
 Priority: optional
 Maintainer: Pexip AS <packaging@pexip.com>
-XSBC-Pexip-Original-Maintainer: Richard Laager <rlaager@debian.org>
-Build-Depends: asciidoctor,
-               bison,
-               debhelper-compat (= 13),
+XSBC-Pexip-Original-Maintaine: Richard Laager <rlaager@debian.org>
+Build-Depends: debhelper-compat (= 13),
                dh-apache2,
                dh-apparmor,
                dh-python,
+               asciidoctor,
+               bison,
                docbook-xsl,
                libbsd-dev,
                libcap2-dev [linux-any],
@@ -19,6 +19,7 @@ Build-Depends: asciidoctor,
                python3,
                python3-dev,
                python3-gps,
+               python3-setuptools,
                systemd-dev,
                xsltproc,
                xz-utils,
@@ -186,40 +187,3 @@ Description: Python 3 NTP Helper Classes
  .
  This is part of NTPsec.  NTPsec is a secure, hardened, and improved
  implementation derived from the original NTP project.
-
-Package: ntp
-Architecture: all
-Section: oldlibs
-Depends: ntpsec,
-         ${misc:Depends},
-Description: Network Time Protocol daemon/utilities (transitional package)
- This is a dummy transitional package to transition to NTPsec.
- It can be safely removed.
-
-Package: ntp-doc
-Architecture: all
-Section: oldlibs
-Depends: ntpsec-doc,
-         ${misc:Depends},
-Description: Network Time Protocol docs (transitional package)
- This is a dummy transitional package to transition to NTPsec.
- It can be safely removed.
-
-Package: ntpdate
-Architecture: all
-Section: oldlibs
-Depends: ntpsec-ntpdate,
-         ${misc:Depends},
-Description: Network Time Protocol client (transitional package)
- This is a dummy transitional package to transition to NTPsec.
- It can be safely removed.
-
-Package: sntp
-Architecture: all
-Section: oldlibs
-Depends: ntpsec-ntpdig,
-         ${misc:Depends},
-Description: Network Time Protocol client (transitional package)
- This is a transitional package to transition to NTPsec.
- It can be safely removed once all uses of sntp(1) have been converted to
- run ntpdig instead.

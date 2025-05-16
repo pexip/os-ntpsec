@@ -1,0 +1,29 @@
+From fe098d00d3b0c68be528b00a51556c1573ce73ed Mon Sep 17 00:00:00 2001
+From: Hal Murray <halmurray@sonic.net>
+Date: Wed, 30 Apr 2025 00:08:34 -0700
+Subject: [PATCH] clears STA_UNSYNC on start (fix #848)
+
+---
+ ntpd/ntp_loopfilter.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/ntpd/ntp_loopfilter.c b/ntpd/ntp_loopfilter.c
+index 1804253c3..4f4d178b7 100644
+--- a/ntpd/ntp_loopfilter.c
++++ b/ntpd/ntp_loopfilter.c
+@@ -1049,9 +1049,9 @@ start_kern_loop(void)
+ 	clock_ctl.pll_control = true;
+ 	ZERO(ntv);
+ 	ntv.modes = MOD_BITS;
+-	ntv.status = STA_PLL;
+-	ntv.maxerror = sys_maxdisp;
+-	ntv.esterror = sys_maxdisp;
++	ntv.status = STA_PLL | STA_UNSYNC;
++	ntv.maxerror = sys_maxdisp * 1e6;
++	ntv.esterror = sys_maxdisp * 1e6;
+ 	ntv.constant = clkstate.sys_poll;
+ 	if ((ntp_adj_ret = ntp_adjtime_ns(&ntv)) != 0) {
+ 	    ntp_adjtime_error_handler(__func__, &ntv, ntp_adj_ret, errno, false, false, __LINE__ - 1);
+-- 
+2.49.0
+

@@ -6,6 +6,9 @@ include:
 variables:
   # This job fails on the waf output.
   SALSA_CI_DISABLE_BLHC: 1
+  # This job fails to take into account virtual packages, so it complains that
+  # ntpsec does not Breaks: openntpd, when Conflicts: time-daemon does that.
+  SALSA_CI_DISABLE_MISSING_BREAKS: 1
   # backports-upload-has-incorrect-version-number: Salsa CI appends +salsaci.
   # backports-changes-missing: Salsa CI does not pass -v when building because
   # it has no way of knowing which version to specify.

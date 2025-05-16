@@ -1,0 +1,55 @@
+From 67bdabb4be48c11cc601335703c8410681ad2eef Mon Sep 17 00:00:00 2001
+From: Joachim Kross <kross@kaffeeschluerfer.com>
+Date: Sun, 28 Apr 2024 14:07:59 +0200
+Subject: [PATCH 1/2] ntpleapfetch: Update URL for leap-seconds.list
+
+The IETF are no longer serving the leap-seconds.list file, see their
+message at https://www.ietf.org/timezones/data/leap-seconds.list.
+Instead, they suggest to use IANA as source instead, i.e.,
+https://data.iana.org/time-zones/data/leap-seconds.list (which in turn
+used to be a copy from NIST, and nowadays is a copy from the IERS).
+
+Update ntpleapfetch and some documentation accordingly.
+---
+ docs/leap.adoc          | 4 ++--
+ ntpclients/ntpleapfetch | 2 +-
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/docs/leap.adoc b/docs/leap.adoc
+index 34636d671..33be2ea71 100644
+--- a/docs/leap.adoc
++++ b/docs/leap.adoc
+@@ -7,7 +7,7 @@ the Universal Coordinated Time (UTC) timescale. Historically,
+ only insertions have occurred, about every eighteen months. The changes
+ have been at the end of the last day of June or December; but, in principle,
+ it could happen at the end of any month. While these bulletins are
+-available on the Internet at https://www.iers.org[www.iers.org], advance
++available on the Internet at https://www.iers.org/[www.iers.org], advance
+ notice of leap seconds is also available in signals broadcast from
+ national time and frequency stations, in GPS signals and in telephone
+ modem services. Many, but not all, reference clocks recognize these
+@@ -33,7 +33,7 @@ of the current month.
+ 
+ When no means are available to determine the leap bits from a reference
+ clock or downstratum server, a leapseconds file can be downloaded from
+-the https://www.ietf.org/timezones/data/leap-seconds.list[IETF]
++the https://data.iana.org/time-zones/data/leap-seconds.list[IANA]
+ and installed using the
+ link:miscopt.html#leapfile[leapfile] command. The file includes a list
+ of historic leap seconds and the NTP time of insertion. It is parsed by
+diff --git a/ntpclients/ntpleapfetch b/ntpclients/ntpleapfetch
+index cf00ac17a..bcae167ec 100755
+--- a/ntpclients/ntpleapfetch
++++ b/ntpclients/ntpleapfetch
+@@ -21,7 +21,7 @@
+ # ########## Default configuration ##########
+ #
+ # Where to get the file
+-LEAPSRC="https://www.ietf.org/timezones/data/leap-seconds.list"
++LEAPSRC="https://data.iana.org/time-zones/data/leap-seconds.list"
+ 
+ # How many times to try to download new file
+ MAXTRIES=6
+-- 
+2.47.2
+

@@ -78,19 +78,23 @@ Also, you need to send ntpd a SIGHUP when the certificate changes.
 
 If you want to use certbot, set the certificate name (e.g. the system's FQDN)
 in the NTPSEC_CERTBOT_CERT_NAME variable in /etc/default/ntpsec, use certbot
-to request the certificate, and the deploy hook installed by this package will
-handle the copying and permissioning.
+to request the certificate, and the certbot deploy hook installed by this
+package will handle the copying and proper permissioning of the files.
 
 Then configure /etc/ntpsec/ntp.conf (or add a file in /etc/ntpsec/ntp.d) with:
-    nts enable mintls TLS1.3
+    nts cert /etc/ntpsec/cert-chain.pem
+    nts key /etc/ntpsec/key.pem
+    nts enable
 
-The next release of NTPsec will require TLS 1.3 by default.
+Such lines are already present in the ntp.conf file shipped with this package,
+but they are commented.
 
-You need to send ntpd a SIGHUP when the certificate changes.  For example,
-with certbot, you could create /etc/letsencrypt/renewal-hooks/deploy/ntpsec
-(which must be executable) with the following contents:
-    #!/bin/sh
-    killall -HUP ntpd 2>/dev/null || true
+Whenever the certificate changes, a running ntpd needs to be informed about those
+changes by sending it a SIGHUP signal, e.g.:
+    killall -HUP ntpd
+
+When using certbot, the deploy hook also takes care of this notifying of ntpd
+for you, e.g., when automatic certificate renewal with certbot is enabled.
 
 
 Keys
