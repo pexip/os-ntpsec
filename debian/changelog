@@ -1,3 +1,9 @@
+ntpsec (1.2.3+dfsg1-8+pexip25u1) pexip-trixie; urgency=medium
+
+  * New upstream release
+
+ -- Mark Hymers <mark.hymers@pexip.com>  Fri, 16 May 2025 10:12:24 +0100
+
 ntpsec (1.2.3+dfsg1-8) unstable; urgency=medium
 
   * Set STA_UNSYNC on start (Closes: 1103964)
