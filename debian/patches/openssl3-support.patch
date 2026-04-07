@@ -1,3 +1,5 @@
+Replace use of old APIs which are deprecated in OpenSSL 3
+
 --- ntpsec.orig/attic/cmac-timing.c
 +++ ntpsec/attic/cmac-timing.c
 @@ -45,9 +45,10 @@ int SAMPLESIZE = 1000000;
