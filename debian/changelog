@@ -1,3 +1,9 @@
+ntpsec (1.2.3+dfsg1-8+pexip25u3) pexip-trixie; urgency=medium
+
+  * Update openssl3 patch to load legacy provider for MD5 use.
+
+ -- Mark Hymers <mark.hymers@pexip.com>  Wed, 27 May 2026 10:48:43 +0100
+
 ntpsec (1.2.3+dfsg1-8+pexip25u2) pexip-trixie; urgency=medium
 
   * Trixie build for product distribution
