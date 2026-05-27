@@ -476,31 +476,37 @@ Replace use of old APIs which are deprecated in OpenSSL 3
          }
 --- ntpsec.orig/ntpd/ntp_control.c
 +++ ntpsec/ntpd/ntp_control.c
-@@ -12,6 +12,7 @@
+@@ -12,7 +12,9 @@
  #include <arpa/inet.h>
  #include <inttypes.h>
  
 +#include <openssl/crypto.h>
  #include <openssl/evp.h>	/* provides OpenSSL digest API */
++#include <openssl/provider.h>
  
  #include "ntpd.h"
-@@ -2561,6 +2562,10 @@ static uint32_t derive_nonce(
+ #include "ntp_io.h"
+@@ -2579,6 +2581,12 @@ static uint32_t derive_nonce(
  		uint8_t	digest[EVP_MAX_MD_SIZE];
  		uint32_t extract;
  	}		d;
 +#if OPENSSL_VERSION_NUMBER >= 0x20000000L
 +	OSSL_LIB_CTX	*libctx;
++	OSSL_PROVIDER	*def_provider;
++	OSSL_PROVIDER	*provider;
 +	EVP_MD		*md;
 +#endif
  	EVP_MD_CTX	*ctx;
  	unsigned int	len;
  
-@@ -2571,8 +2576,17 @@ static uint32_t derive_nonce(
+@@ -2589,8 +2597,19 @@ static uint32_t derive_nonce(
  			(long long)next_salt_update);
  	}
  
 +#if OPENSSL_VERSION_NUMBER > 0x20000000L
 +	libctx = OSSL_LIB_CTX_new();
++	def_provider = OSSL_PROVIDER_load(libctx, "default");
++	provider = OSSL_PROVIDER_load(libctx, "legacy");
 +	md = EVP_MD_fetch(libctx, "MD5", NULL);
 +#endif
 +
@@ -513,12 +519,14 @@ Replace use of old APIs which are deprecated in OpenSSL 3
  	EVP_DigestUpdate(ctx, salt, sizeof(salt));
  	EVP_DigestUpdate(ctx, &ts_i, sizeof(ts_i));
  	EVP_DigestUpdate(ctx, &ts_f, sizeof(ts_f));
-@@ -2587,6 +2601,11 @@ static uint32_t derive_nonce(
+@@ -2605,6 +2624,13 @@ static uint32_t derive_nonce(
  	EVP_DigestFinal_ex(ctx, d.digest, &len);
  	EVP_MD_CTX_destroy(ctx);
  
 +#if OPENSSL_VERSION_NUMBER >= 0x20000000L
 +	EVP_MD_free(md);
++	OSSL_PROVIDER_unload(def_provider);
++	OSSL_PROVIDER_unload(provider);
 +	OSSL_LIB_CTX_free(libctx);
 +#endif
 +
@@ -550,7 +558,7 @@ Replace use of old APIs which are deprecated in OpenSSL 3
  	char name[200];
 --- ntpsec.orig/wscript
 +++ ntpsec/wscript
-@@ -671,10 +671,12 @@ int main(int argc, char **argv) {
+@@ -676,10 +676,12 @@ int main(int argc, char **argv) {
      required_functions = (
          # MacOS doesn't have timer_create ??
          ('timer_create', ["signal.h", "time.h"], "RT", False),
@@ -564,7 +572,7 @@ Replace use of old APIs which are deprecated in OpenSSL 3
  	# Next should be above, but it needs a library
  	# EVP_PKEY_new_CMAC_key added in OpenSSL 1.1.1
          ('EVP_PKEY_new_CMAC_key', ["openssl/cmac.h"], "CRYPTO", False))
-@@ -683,6 +685,9 @@ int main(int argc, char **argv) {
+@@ -688,6 +690,9 @@ int main(int argc, char **argv) {
                         prerequisites=ft[1], use=ft[2],
                         mandatory=ft[3])
  
@@ -574,3 +582,45 @@ Replace use of old APIs which are deprecated in OpenSSL 3
      # check for BSD versions outside of libc
      if not ctx.get_define("HAVE_STRLCAT"):
          ret = probe_function(ctx, function='strlcat',
+--- ntpsec.orig/libntp/macencrypt.c
++++ ntpsec/libntp/macencrypt.c
+@@ -52,6 +52,7 @@
+ #include <openssl/err.h>
+ #include <openssl/evp.h>	/* provides OpenSSL digest API */
+ #include <openssl/md5.h>
++#include <openssl/provider.h>
+ 
+ #include "ntp_fp.h"
+ #include "ntp_stdlib.h"
+@@ -299,14 +300,19 @@ addr2refid(sockaddr_u *addr)
+ 		return (NSRCADR(addr));
+ 
+ #if OPENSSL_VERSION_NUMBER >= 0x30000000L
++	OSSL_LIB_CTX    *libctx;
++	OSSL_PROVIDER   *provider, *def_provider;
+ 	EVP_MD *md5;
++	libctx = OSSL_LIB_CTX_new();
++	def_provider = OSSL_PROVIDER_load(libctx, "default");
++	provider = OSSL_PROVIDER_load(libctx, "legacy");
+ 	ctx = EVP_MD_CTX_new();
+ 	/* See section FIPS Provider:
+ 	 * https://www.openssl.org/docs/man3.0/man7/crypto.html
+ 	 * for property query strings
+ 	 */
+-	md5 = EVP_MD_fetch(NULL, "MD5", "fips=no");
+-	if(!EVP_DigestInit_ex(ctx, md5, NULL)) {
++	md5 = EVP_MD_fetch(libctx, "MD5", NULL);
++	if(!EVP_DigestInit(ctx, md5)) {
+ 		msyslog(LOG_ERR, "MAC: MD5 init failed");
+ 		exit(1);
+ 	}
+@@ -326,6 +332,9 @@ addr2refid(sockaddr_u *addr)
+ 	    sizeof(struct in6_addr));
+ 	EVP_DigestFinal_ex(ctx, digest, &len);
+ 	EVP_MD_CTX_destroy(ctx);
++	OSSL_PROVIDER_unload(def_provider);
++	OSSL_PROVIDER_unload(provider);
++	OSSL_LIB_CTX_free(libctx);
+ 	memcpy(&addr_refid, digest, sizeof(addr_refid));
+ 	return (addr_refid);
+ }
