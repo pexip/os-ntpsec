@@ -19,6 +19,7 @@ systemd-alias-ntpsec.patch
 systemd-use-wrapper.patch
 systemd-fix-ntp-wait-service-paths.patch
 systemd-configure-ntpviz.patch
+systemd-allow-restart.patch
 remove-old-bug-note.patch
 update-refclock-docs.patch
 use-ntpsec-as-the-user.patch
