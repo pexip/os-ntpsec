@@ -1,3 +1,10 @@
+ntpsec (1.2.3+dfsg1-8+pexip25u4) pexip-trixie; urgency=medium
+
+  * d/p/systemd-allow-restart: allow ntpd to restart in the event of an issue
+  * d/defaults: remove the -g flag to prevent large jumps
+
+ -- Huw Jones <huw@pexip.com>  Mon, 9 Nov 2026 15:35:05 +0000
+
 ntpsec (1.2.3+dfsg1-8+pexip25u3) pexip-trixie; urgency=medium
 
   * Update openssl3 patch to load legacy provider for MD5 use.

@@ -1,6 +1,6 @@
 --- a/etc/ntpd.service	2026-11-09 11:58:15
---- b/etc/ntpd.service	2026-11-09 12:02:26
-@@ -14,7 +14,7 @@
++++ b/etc/ntpd.service	2026-11-09 12:02:26
+@@ -15,7 +15,7 @@ ExecStart=/usr/libexec/ntpsec/ntp-system
  # the clock on boot.  However, if Restart=yes is set, a malicious (or broken)
  # server could send the incorrect time, trip the panic threshold, and when
  # ntpd restarts, serve it the incorrect time (which would be accepted).
@@ -8,4 +8,4 @@
 +Restart=yes
  
  [Install]
- WantedBy=multi-user.target
+ Alias=ntp.service
